@@ -1,0 +1,3537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GV GROUP — Centro de Análisis Financiero</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;900&family=Archivo+Narrow:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ═══════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════ */
+:root {
+  --ink:    #0b0d14;
+  --ink2:   #10131d;
+  --ink3:   #161a27;
+  --ink4:   #1d2235;
+  --line:   #242840;
+  --line2:  #2e3450;
+  --frost:  #d4daf5;
+  --frost2: #8892b8;
+  --frost3: #50597a;
+
+  --lime:   #a8ff3e;
+  --lime2:  rgba(168,255,62,.1);
+  --lime3:  rgba(168,255,62,.05);
+  --red:    #ff3d5a;
+  --red2:   rgba(255,61,90,.1);
+  --amber:  #ffb038;
+  --amber2: rgba(255,176,56,.1);
+  --sky:    #38b6ff;
+  --sky2:   rgba(56,182,255,.1);
+  --violet: #c084fc;
+  --violet2:rgba(192,132,252,.1);
+  --coral:  #ff6b4a;
+  --coral2: rgba(255,107,74,.1);
+
+  --ff: 'Archivo', sans-serif;
+  --fn: 'Archivo Narrow', sans-serif;
+  --fm: 'Fira Code', monospace;
+}
+
+
+/* ═══════════════════════════════════════
+   PDF EXPORT BUTTON
+═══════════════════════════════════════ */
+.pdf-btn {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 14px; border-radius:6px;
+  background:var(--ink3); border:1px solid var(--line2);
+  color:var(--frost2); font-size:.72rem; font-family:var(--fm);
+  cursor:pointer; transition:.2s; letter-spacing:1px;
+}
+.pdf-btn:hover { background:var(--ink4); color:var(--frost); border-color:var(--frost3); }
+.page-h { position:relative; }
+.page-h-actions { position:absolute; top:0; right:0; }
+
+/* KPI grupos */
+.kpi-group { margin-bottom:20px; }
+.kpi-group-title {
+  font-size:.65rem; font-family:var(--fm); letter-spacing:2px;
+  color:var(--frost3); text-transform:uppercase;
+  border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:12px;
+}
+.g6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+@media(max-width:1100px){ .g6 { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:700px){ .g6 { grid-template-columns:repeat(2,1fr); } }
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--ink);
+  color: var(--frost);
+  font-family: var(--ff);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+button { cursor: pointer; font-family: var(--ff); }
+input, select { font-family: var(--ff); }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
+.shell { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 200px; min-width: 200px;
+  background: var(--ink2);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  position: fixed; top:0; left:0; height:100vh;
+  z-index: 200;
+}
+.sb-logo {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.sb-logo-name {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 4px;
+  color: var(--lime);
+}
+.sb-logo-name span { color: var(--frost); }
+.sb-logo-sub {
+  font-family: var(--fm);
+  font-size: .6rem;
+  color: var(--frost3);
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+.sb-nav { flex: 1; padding: 12px 8px; overflow-y: auto; }
+.sb-group {
+  font-family: var(--fm);
+  font-size: .58rem;
+  color: var(--frost3);
+  letter-spacing: 2px;
+  padding: 10px 8px 4px;
+  text-transform: uppercase;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--frost3);
+  transition: all .15s;
+  margin-bottom: 1px;
+  border: 1px solid transparent;
+}
+.sb-item:hover { color: var(--frost); background: var(--ink3); }
+.sb-item.active {
+  color: var(--lime);
+  background: var(--lime3);
+  border-color: rgba(168,255,62,.15);
+}
+.sb-item .ico { font-size: .9rem; width: 16px; text-align: center; }
+
+.sb-upload {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+.upload-btn {
+  width: 100%;
+  background: var(--lime);
+  color: var(--ink);
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 700;
+  font-size: .78rem;
+  letter-spacing: 1px;
+  transition: opacity .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.upload-btn:hover { opacity: .85; }
+#fileInput { display: none; }
+
+.sb-status {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  font-family: var(--fm);
+  font-size: .6rem;
+  color: var(--frost3);
+  display: flex; align-items: center; gap: 6px;
+}
+.dot-live {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--lime);
+  animation: blink 2s infinite;
+}
+@keyframes blink {
+  0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(168,255,62,.6); }
+  50% { opacity:.6; box-shadow: 0 0 0 5px rgba(168,255,62,0); }
+}
+
+/* MAIN */
+.main-wrap {
+  margin-left: 200px;
+  flex: 1;
+  display: flex; flex-direction: column;
+}
+
+/* TOPBAR */
+.topbar {
+  height: 52px;
+  background: var(--ink2);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+  position: sticky; top: 0; z-index: 100;
+}
+.tb-left { display: flex; align-items: center; gap: 16px; }
+.tb-title {
+  font-family: var(--ff);
+  font-weight: 700;
+  font-size: .9rem;
+  letter-spacing: .5px;
+}
+.tb-breadcrumb {
+  font-family: var(--fm);
+  font-size: .62rem;
+  color: var(--frost3);
+  letter-spacing: 1px;
+}
+.tb-right { display: flex; align-items: center; gap: 10px; }
+.chip {
+  background: var(--ink3);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-family: var(--fm);
+  font-size: .65rem;
+  color: var(--frost3);
+}
+.chip.lime { background: var(--lime2); border-color: rgba(168,255,62,.25); color: var(--lime); }
+.chip.red  { background: var(--red2);  border-color: rgba(255,61,90,.25);  color: var(--red); }
+.chip.amber{ background: var(--amber2);border-color: rgba(255,176,56,.25); color: var(--amber); }
+
+/* ═══════════════════════════════════════
+   PERIOD FILTER BAR
+═══════════════════════════════════════ */
+.filterbar {
+  background: var(--ink2);
+  border-bottom: 1px solid var(--line);
+  padding: 0 28px;
+  display: flex; align-items: center; gap: 10px;
+  height: 44px;
+  font-family: var(--fm);
+  font-size: .65rem;
+  letter-spacing: 1px;
+}
+.fb-label { color: var(--frost3); text-transform: uppercase; white-space: nowrap; }
+.fb-sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.fb-quick { display: flex; gap: 4px; }
+.fb-q {
+  padding: 4px 10px; border-radius: 100px;
+  background: transparent; border: 1px solid var(--line);
+  color: var(--frost3); cursor: pointer; font-family: var(--fm);
+  font-size: .62rem; letter-spacing: 1px; transition: .15s;
+  white-space: nowrap;
+}
+.fb-q:hover { color: var(--frost); border-color: var(--line2); }
+.fb-q.active { background: var(--lime2); border-color: rgba(168,255,62,.4); color: var(--lime); }
+.fb-range { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.fb-select {
+  background: var(--ink3); border: 1px solid var(--line2);
+  color: var(--frost2); font-family: var(--fm); font-size: .62rem;
+  padding: 4px 8px; border-radius: 6px; cursor: pointer;
+  max-width: 120px;
+}
+.fb-select:focus { outline: none; border-color: rgba(168,255,62,.4); }
+.fb-info { color: var(--frost3); font-size: .6rem; margin-left: 8px; }
+
+/* CONTENT */
+.content { padding: 24px 28px; flex: 1; }
+
+/* ═══════════════════════════════════════
+   UPLOAD SCREEN
+═══════════════════════════════════════ */
+#uploadScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 52px);
+  text-align: center;
+}
+.upload-zone {
+  border: 2px dashed var(--line2);
+  border-radius: 20px;
+  padding: 60px 80px;
+  cursor: pointer;
+  transition: all .3s;
+  background: var(--ink2);
+  max-width: 520px;
+  width: 100%;
+}
+.upload-zone:hover, .upload-zone.drag {
+  border-color: var(--lime);
+  background: var(--lime3);
+}
+.upload-icon { font-size: 3rem; margin-bottom: 16px; }
+.upload-title {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.upload-desc { color: var(--frost3); font-size: .82rem; line-height: 1.6; margin-bottom: 24px; }
+.upload-cta {
+  background: var(--lime);
+  color: var(--ink);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  font-weight: 700;
+  font-size: .85rem;
+  letter-spacing: 1px;
+  transition: opacity .2s;
+}
+.upload-cta:hover { opacity: .85; }
+.upload-note {
+  margin-top: 20px;
+  font-family: var(--fm);
+  font-size: .65rem;
+  color: var(--frost3);
+}
+
+/* ═══════════════════════════════════════
+   SECTIONS
+═══════════════════════════════════════ */
+.section { display: none; }
+.section.active { display: block; animation: fadeUp .3s ease; }
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════
+   RENTABILIDAD — VEREDICTO
+═══════════════════════════════════════ */
+.veredicto {
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid;
+}
+.veredicto.positivo {
+  background: linear-gradient(135deg, rgba(168,255,62,.08), rgba(168,255,62,.03));
+  border-color: rgba(168,255,62,.3);
+}
+.veredicto.negativo {
+  background: linear-gradient(135deg, rgba(255,61,90,.1), rgba(255,61,90,.03));
+  border-color: rgba(255,61,90,.3);
+}
+.veredicto.neutro {
+  background: linear-gradient(135deg, rgba(255,176,56,.08), rgba(255,176,56,.03));
+  border-color: rgba(255,176,56,.3);
+}
+.verd-left {}
+.verd-tag {
+  font-family: var(--fm);
+  font-size: .62rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.verd-titulo {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.8rem;
+  letter-spacing: 1px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.verd-desc { font-size: .8rem; color: var(--frost2); max-width: 500px; }
+.verd-right { text-align: right; }
+.verd-num {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 2.8rem;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+.verd-num-label {
+  font-family: var(--fm);
+  font-size: .62rem;
+  color: var(--frost3);
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════
+   PAGE HEADER
+═══════════════════════════════════════ */
+.page-h { margin-bottom: 20px; }
+.page-h-title {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+.page-h-sub { font-size: .75rem; color: var(--frost3); }
+
+/* ═══════════════════════════════════════
+   GRIDS
+═══════════════════════════════════════ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 16px; }
+.g5 { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 16px; }
+.g-wide { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+.g-wider { display: grid; grid-template-columns: 3fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+/* ═══════════════════════════════════════
+   CARDS
+═══════════════════════════════════════ */
+.card {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+.card-xs { background: var(--ink2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.c-lime   { border-color: rgba(168,255,62,.2); background: linear-gradient(135deg,var(--ink2),rgba(168,255,62,.03)); }
+.c-red    { border-color: rgba(255,61,90,.2);  background: linear-gradient(135deg,var(--ink2),rgba(255,61,90,.03)); }
+.c-amber  { border-color: rgba(255,176,56,.2); background: linear-gradient(135deg,var(--ink2),rgba(255,176,56,.03)); }
+.c-sky    { border-color: rgba(56,182,255,.2); background: linear-gradient(135deg,var(--ink2),rgba(56,182,255,.03)); }
+.c-violet { border-color: rgba(192,132,252,.2);background: linear-gradient(135deg,var(--ink2),rgba(192,132,252,.03)); }
+
+.c-lbl {
+  font-family: var(--fm);
+  font-size: .58rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--frost3);
+  margin-bottom: 8px;
+}
+.c-val {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.8rem;
+  line-height: 1.1;
+  letter-spacing: -.5px;
+  margin-bottom: 3px;
+}
+.c-sub { font-size: .72rem; color: var(--frost3); }
+.c-sub.up    { color: var(--lime); }
+.c-sub.down  { color: var(--red); }
+.c-sub.warn  { color: var(--amber); }
+.c-sub.info  { color: var(--sky); }
+
+/* COLORS */
+.lime   { color: var(--lime); }
+.red    { color: var(--red); }
+.amber  { color: var(--amber); }
+.sky    { color: var(--sky); }
+.violet { color: var(--violet); }
+.coral  { color: var(--coral); }
+.muted  { color: var(--frost3); }
+
+/* ═══════════════════════════════════════
+   SECTION DIVIDER
+═══════════════════════════════════════ */
+.divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 20px 0 14px;
+  font-family: var(--fn);
+  font-weight: 700;
+  font-size: .72rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--frost3);
+}
+.divider::after { content:''; flex:1; height:1px; background: var(--line); }
+
+/* ═══════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════ */
+.ch { position: relative; }
+.ch-120 { height: 120px; }
+.ch-180 { height: 180px; }
+.ch-220 { height: 220px; }
+.ch-260 { height: 260px; }
+.ch-300 { height: 300px; }
+.ch-340 { height: 340px; }
+
+/* ═══════════════════════════════════════
+   TABLE
+═══════════════════════════════════════ */
+.tbl-scroll { overflow-x: auto; }
+table { width:100%; border-collapse: collapse; font-size: .78rem; }
+thead th {
+  padding: 9px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--fm);
+  font-size: .58rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--frost3);
+  font-weight: 400;
+}
+tbody tr {
+  border-bottom: 1px solid rgba(36,40,64,.5);
+  transition: background .12s;
+}
+tbody tr:hover { background: var(--ink3); }
+tbody td { padding: 9px 12px; }
+.mono { font-family: var(--fm); }
+
+/* ═══════════════════════════════════════
+   PILLS
+═══════════════════════════════════════ */
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 100px;
+  font-size: .62rem; font-weight: 700; letter-spacing: .5px;
+  font-family: var(--fm);
+}
+.p-lime   { background: var(--lime2);   color: var(--lime); }
+.p-red    { background: var(--red2);    color: var(--red); }
+.p-amber  { background: var(--amber2);  color: var(--amber); }
+.p-sky    { background: var(--sky2);    color: var(--sky); }
+.p-violet { background: var(--violet2); color: var(--violet); }
+.p-muted  { background: var(--ink4);    color: var(--frost3); }
+
+/* ═══════════════════════════════════════
+   BAR LISTS
+═══════════════════════════════════════ */
+.blist { display: flex; flex-direction: column; gap: 10px; }
+.brow { display: grid; grid-template-columns: 90px 1fr 70px; align-items: center; gap: 10px; }
+.bname { font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btrack { background: var(--ink4); border-radius: 3px; height: 6px; overflow: hidden; }
+.bfill { height: 100%; border-radius: 3px; transition: width 1.3s cubic-bezier(.17,.67,.33,1); }
+.bval { font-family: var(--fm); font-size: .68rem; color: var(--frost3); text-align: right; }
+
+/* ═══════════════════════════════════════
+   SCORE ROWS
+═══════════════════════════════════════ */
+.srow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 12px;
+  background: var(--ink3);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  border: 1px solid var(--line);
+}
+.srow-l { font-size: .78rem; }
+.srow-r { font-family: var(--fm); font-size: .78rem; font-weight: 500; }
+.srow.highlight-g { background: var(--lime3); border-color: rgba(168,255,62,.2); }
+.srow.highlight-r { background: var(--red2);  border-color: rgba(255,61,90,.2); }
+
+/* ═══════════════════════════════════════
+   ALERT BOXES
+═══════════════════════════════════════ */
+.alert {
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+  display: flex; gap: 10px; align-items: flex-start;
+  border: 1px solid;
+}
+.al-lime   { background: var(--lime3);   border-color: rgba(168,255,62,.2); }
+.al-red    { background: var(--red2);    border-color: rgba(255,61,90,.2); }
+.al-amber  { background: var(--amber2);  border-color: rgba(255,176,56,.2); }
+.al-sky    { background: var(--sky2);    border-color: rgba(56,182,255,.2); }
+.al-ico  { font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
+.al-title { font-weight: 700; font-size: .8rem; margin-bottom: 2px; }
+.al-text  { font-size: .73rem; color: var(--frost2); line-height: 1.5; }
+
+/* ═══════════════════════════════════════
+   VENDEDOR BLOCK
+═══════════════════════════════════════ */
+.vcard {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.vcard-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.vcard-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.vcard-name { font-family: var(--ff); font-weight: 900; font-size: 1rem; letter-spacing: 2px; }
+.vcard-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
+.vkpi { background: var(--ink3); border-radius: 8px; padding: 8px 10px; }
+.vkpi-l { font-family: var(--fm); font-size: .55rem; color: var(--frost3); letter-spacing: 1px; text-transform: uppercase; }
+.vkpi-v { font-family: var(--ff); font-weight: 700; font-size: .95rem; margin-top: 3px; }
+.vbar-wrap { margin-top: 4px; }
+.vbar-bg { background: var(--ink4); border-radius: 3px; height: 4px; margin-top: 4px; overflow: hidden; }
+.vbar-fill { height: 100%; border-radius: 3px; }
+
+/* TREND ARROW */
+.trend { font-family: var(--fm); font-size: .7rem; display: inline-flex; align-items: center; gap: 3px; }
+.trend.up   { color: var(--lime); }
+.trend.down { color: var(--red); }
+.trend.flat { color: var(--amber); }
+
+/* ═══════════════════════════════════════
+   PROGRESS BAR HORIZONTAL (break-even)
+═══════════════════════════════════════ */
+.be-track {
+  background: var(--ink4);
+  border-radius: 8px;
+  height: 20px;
+  position: relative;
+  overflow: hidden;
+  margin: 10px 0;
+}
+.be-fill {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 1s ease;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 8px;
+  font-family: var(--fm);
+  font-size: .62rem;
+  font-weight: 600;
+}
+.be-marker {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--frost);
+  opacity: .5;
+}
+.be-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--fm);
+  font-size: .62rem;
+  color: var(--frost3);
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════
+   LOADING
+═══════════════════════════════════════ */
+#loadingOverlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(11,13,20,.85);
+  z-index: 9999;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
+}
+#loadingOverlay.show { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--line2);
+  border-top-color: var(--lime);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: var(--fm); font-size: .75rem; color: var(--frost3); letter-spacing: 2px; }
+
+/* ═══════════════════════════════════════
+   KPI OPERATIVO CARDS
+═══════════════════════════════════════ */
+.kpi-op-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media(max-width:1200px){ .kpi-op-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:700px){  .kpi-op-grid { grid-template-columns: 1fr; } }
+
+.kpi-op-card {
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kpi-op-head {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--fm); font-size: .58rem; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--frost3);
+}
+.kpi-op-ico { font-size: .85rem; }
+.kpi-op-title { font-weight: 600; }
+.kpi-op-body {
+  display: flex; align-items: center; gap: 8px;
+}
+.kpi-op-col { flex: 1; }
+.kpi-op-lbl { font-family: var(--fm); font-size: .55rem; color: var(--frost3); letter-spacing: 1px; margin-bottom: 2px; }
+.kpi-op-val { font-family: var(--ff); font-weight: 900; font-size: 1.15rem; line-height: 1.1; letter-spacing: -.3px; }
+.kpi-op-arrow { font-size: 1.4rem; font-weight: 900; flex-shrink: 0; }
+.kpi-op-delta { text-align: right; flex-shrink: 0; min-width: 52px; }
+.kpi-op-d1 { font-family: var(--ff); font-weight: 700; font-size: .82rem; }
+.kpi-op-d2 { font-family: var(--fm); font-size: .62rem; }
+.kpi-op-sub { font-size: .68rem; color: var(--frost3); }
+.kpi-op-nota { font-family: var(--fm); font-size: .62rem; color: var(--amber); padding: 4px 8px; background: var(--amber2); border-radius: 4px; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+@media (max-width:1100px) {
+  .g4 { grid-template-columns: repeat(2,1fr); }
+  .g5 { grid-template-columns: repeat(3,1fr); }
+  .g-wide, .g-wider { grid-template-columns: 1fr; }
+}
+@media (max-width:860px) {
+  .sidebar { display: none; }
+  .main-wrap { margin-left: 0; }
+  .g2,.g3 { grid-template-columns: 1fr; }
+  .content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">PROCESANDO EXCEL...</div>
+</div>
+
+<div class="shell">
+
+<!-- ════════════════ SIDEBAR ════════════════ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-name">GV <span>GROUP</span></div>
+    <div class="sb-logo-sub">ANÁLISIS FINANCIERO</div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="sb-group">Principal</div>
+    <div class="sb-item active" data-sec="rentabilidad"><span class="ico">◉</span> KPIs</div>
+    <div class="sb-item" data-sec="cobranza"><span class="ico">◈</span> Cobranza Global</div>
+
+    <div class="sb-group">Operaciones</div>
+    <div class="sb-item" data-sec="kpis_op"><span class="ico">⚡</span> KPIs</div>
+    <div class="sb-item" data-sec="vendedores"><span class="ico">◎</span> Vendedores</div>
+    <div class="sb-item" data-sec="ventas"><span class="ico">◇</span> Ventas</div>
+
+    <div class="sb-group">Finanzas</div>
+    <div class="sb-item" data-sec="costos"><span class="ico">▣</span> Costos</div>
+    <div class="sb-item" data-sec="deuda"><span class="ico">⬡</span> Acreedores</div>
+    <div class="sb-item" data-sec="flujo"><span class="ico">▷</span> Flujo de Caja</div>
+
+    <div class="sb-group">Evolución</div>
+    <div class="sb-item" data-sec="historial"><span class="ico">△</span> Historial Semanal</div>
+    <div class="sb-item" data-sec="alertas"><span class="ico">⚑</span> Alertas</div>
+  </nav>
+
+  <div class="sb-upload">
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+      ↑ CARGAR EXCEL
+    </button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" onchange="handleFile(event)">
+  </div>
+
+  <div class="sb-status">
+    <div class="dot-live"></div>
+    <span id="sbStatusText">Sin datos cargados</span>
+  </div>
+</aside>
+
+<!-- ════════════════ MAIN ════════════════ -->
+<div class="main-wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-title" id="topTitle">KPIs del Negocio</div>
+      <div class="tb-breadcrumb" id="topSub">GV GROUP · PANEL FINANCIERO</div>
+    </div>
+    <div class="tb-right">
+      <div class="chip" id="chipPeriodo">Sin datos</div>
+      <div class="chip" id="chipSemanas">—</div>
+      <div class="chip lime" id="chipEstado">EN ESPERA</div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filterbar" id="filterBar" style="display:none;">
+    <span class="fb-label">Período</span>
+    <div class="fb-sep"></div>
+    <div class="fb-quick">
+      <button class="fb-q" data-period="4" onclick="applyQuickPeriod(4)">4 SEM</button>
+      <button class="fb-q" data-period="8" onclick="applyQuickPeriod(8)">8 SEM</button>
+      <button class="fb-q" data-period="13" onclick="applyQuickPeriod(13)">13 SEM</button>
+      <button class="fb-q active" data-period="all" onclick="applyQuickPeriod('all')">TODO</button>
+    </div>
+    <div class="fb-sep"></div>
+    <div class="fb-quick" id="fbMeses"></div>
+    <div class="fb-sep"></div>
+    <div class="fb-range">
+      <span class="fb-label">Desde</span>
+      <select class="fb-select" id="fbDesde" onchange="applyRangePeriod()"></select>
+      <span class="fb-label">Hasta</span>
+      <select class="fb-select" id="fbHasta" onchange="applyRangePeriod()"></select>
+    </div>
+    <div class="fb-sep"></div>
+    <span class="fb-info" id="fbInfo">—</span>
+  </div>
+
+  <div class="content">
+
+    <!-- ════ UPLOAD SCREEN ════ -->
+    <div id="uploadScreen">
+      <div class="upload-zone" id="dropZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon">📊</div>
+        <div class="upload-title">CARGÁ TU EXCEL</div>
+        <div class="upload-desc">
+          Arrastrá el archivo Excel de GV Group aquí o hacé click.<br>
+          El sistema lee automáticamente todas las hojas:<br>
+          <strong>ANALISIS GLOBAL, Z1–Z5, ACREEDORES, COSTOS, RENTABILIDAD</strong>
+        </div>
+        <button class="upload-cta">SELECCIONAR ARCHIVO</button>
+        <div class="upload-note">Compatible con .xlsx · Cada semana subís el mismo archivo actualizado</div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: RENTABILIDAD
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-rentabilidad">
+      <div class="page-h">
+        <div class="page-h-title">KPIs del Negocio</div>
+        <div class="page-h-sub">20 indicadores clave · ingresos · riesgo · rentabilidad · eficiencia</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-rentabilidad','KPIs')">⬇ PDF</button></div>
+      </div>
+
+      <!-- VEREDICTO PRINCIPAL -->
+      <div id="veredictoBox" class="veredicto neutro">
+        <div class="verd-left">
+          <div class="verd-tag muted" id="verd-tag">DIAGNÓSTICO DEL MES</div>
+          <div class="verd-titulo" id="verd-titulo">—</div>
+          <div class="verd-desc" id="verd-desc">Cargá el Excel para ver el diagnóstico.</div>
+        </div>
+        <div class="verd-right">
+          <div class="verd-num" id="verd-num">—</div>
+          <div class="verd-num-label" id="verd-num-label">RESULTADO NETO</div>
+        </div>
+      </div>
+
+      <!-- KPIs PRINCIPALES -->
+      <div class="g5" id="kpis-rent"></div>
+
+
+      <!-- PROYECCIÓN DEL MES EN CURSO -->
+      <div class="divider">Proyección del Mes en Curso</div>
+      <div id="proyeccion-container"></div>
+
+      <!-- BREAK-EVEN -->
+      <div class="divider">Break-Even</div>
+      <div class="g-wide">
+        <div class="card">
+          <div class="c-lbl">Progreso hacia el Break-Even mensual</div>
+          <div style="margin-top:10px;" id="be-widget"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Waterfall financiero</div>
+          <div class="ch ch-220"><canvas id="c_waterfall"></canvas></div>
+        </div>
+      </div>
+
+      <!-- CUENTA DE RESULTADOS DETALLADA -->
+      <div class="divider">Cuenta de Resultados</div>
+      <div class="g-wide">
+        <div class="card">
+          <div id="cuentaResultados"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Distribución de costos sobre ingresos</div>
+          <div class="ch ch-220"><canvas id="c_costos_pct"></canvas></div>
+        </div>
+      </div>
+
+    </div><!-- /sec-rentabilidad -->
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: COBRANZA GLOBAL
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-cobranza">
+      <div class="page-h">
+        <div class="page-h-title">Cobranza Global</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-cobranza','Cobranza')">⬇ PDF</button></div>
+        <div class="page-h-sub" id="cob-sub-text">—</div>
+      </div>
+      <div class="filterbar" style="position:static;border:1px solid var(--line);border-radius:10px;margin-bottom:16px;padding:0 16px;">
+        <span class="fb-label">Vendedor</span><div class="fb-sep"></div>
+        <div class="fb-quick" id="cob-vend-btns"></div>
+      </div>
+
+      <div class="g5" id="kpis-cob"></div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="c-lbl">Evolución % cobranza semanal — con metas y zonas críticas</div>
+        <div class="ch ch-300"><canvas id="c_cob_full"></canvas></div>
+      </div>
+
+      <div class="g2">
+        <div class="card">
+          <div class="c-lbl">A cobrar vs cobrado — por mes</div>
+          <div class="ch ch-220"><canvas id="c_mensual"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Distribución de semanas por rango de cobranza</div>
+          <div class="ch ch-220"><canvas id="c_histograma"></canvas></div>
+        </div>
+      </div>
+
+
+      <!-- COMPARACIÓN MES A MES -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="c-lbl" style="margin-bottom:12px;">📅 Comparación mes a mes — cobranza, ventas y resultado</div>
+        <div id="mensual-comparacion"></div>
+        <div class="ch ch-240" style="margin-top:12px;"><canvas id="c_mensual_comp"></canvas></div>
+      </div>
+
+      <div class="card">
+        <div class="c-lbl" style="margin-bottom:12px;">Detalle semanal completo</div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>#</th><th>Semana</th><th>A Cobrar</th><th>Cobrado</th><th>Sin Cobrar</th><th>% Cob.</th><th>Ventas</th><th>vs Semana Ant.</th><th>Crec. desde sem 1</th><th>Estado</th></tr></thead>
+            <tbody id="tbl-cob"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: KPIs OPERATIVOS
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-kpis_op">
+      <div class="page-h">
+        <div class="page-h-title">KPIs Operativos</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-kpis_op','KPIs-Op')">⬇ PDF</button></div>
+        <div class="page-h-sub" id="kpis-op-sub">Evolución desde inicio del período — inicio vs actual — variación absoluta y relativa</div>
+      </div>
+      <div class="filterbar" style="position:static;border:1px solid var(--line);border-radius:10px;margin-bottom:12px;padding:0 16px;">
+        <span class="fb-label">Vendedor</span><div class="fb-sep"></div>
+        <div class="fb-quick" id="kpis-op-vend-btns"></div>
+      </div>
+      <div class="filterbar" style="position:static;border:1px solid var(--line);border-radius:10px;margin-bottom:16px;padding:0 16px;flex-wrap:wrap;gap:6px;height:auto;min-height:44px;">
+        <span class="fb-label">Inicio</span>
+        <div class="fb-sep"></div>
+        <div class="fb-quick" id="kpis-op-inicio-tipo">
+          <button class="fb-q active" data-tipo="sem" onclick="setKpisOpTipo('inicio','sem')">SEMANA</button>
+          <button class="fb-q" data-tipo="mes" onclick="setKpisOpTipo('inicio','mes')">MES</button>
+        </div>
+        <select class="fb-select" id="kpis-op-inicio-sel" onchange="renderKpisOpFromState()" style="max-width:160px;"></select>
+        <div class="fb-sep"></div>
+        <span class="fb-label">Actual</span>
+        <div class="fb-sep"></div>
+        <div class="fb-quick" id="kpis-op-actual-tipo">
+          <button class="fb-q active" data-tipo="sem" onclick="setKpisOpTipo('actual','sem')">SEMANA</button>
+          <button class="fb-q" data-tipo="mes" onclick="setKpisOpTipo('actual','mes')">MES</button>
+        </div>
+        <select class="fb-select" id="kpis-op-actual-sel" onchange="renderKpisOpFromState()" style="max-width:160px;"></select>
+      </div>
+      <div id="kpis-op-container"></div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: VENDEDORES
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-vendedores">
+      <div class="page-h">
+        <div class="page-h-title">Performance por Vendedor</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-vendedores','Vendedores')">⬇ PDF</button></div>
+        <div class="page-h-sub">Análisis integral · cobranza · cartera · rentabilidad · riesgo · score</div>
+      </div>
+
+      <!-- RANKING SCORE -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="c-lbl" style="margin-bottom:14px;">🏆 Ranking general — Score ponderado (cobranza 40% · volumen 25% · rentabilidad 20% · incobrables 15%)</div>
+        <div id="vend-ranking"></div>
+      </div>
+
+      <!-- MAPA ESTRATÉGICO -->
+      <div class="g2" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="c-lbl">Mapa estratégico · Volumen vs Cobranza</div>
+          <div class="ch ch-280"><canvas id="c_vend_mapa"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Participación de cartera por vendedor</div>
+          <div class="ch ch-280"><canvas id="c_vend_cartera_pie"></canvas></div>
+        </div>
+      </div>
+
+      <!-- TABLA COMPARATIVA -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="c-lbl" style="margin-bottom:12px;">Tabla comparativa de indicadores</div>
+        <div class="tbl-scroll">
+          <table id="tbl-vendedores">
+            <thead><tr>
+              <th>Vendedor</th>
+              <th>% Cartera</th>
+              <th>Cobranza</th>
+              <th>ROI zona</th>
+              <th>Incobrables est.</th>
+              <th>Rotación</th>
+                            <th>Score</th>
+            </tr></thead>
+            <tbody id="tbody-vend"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GRÁFICOS DE BARRAS -->
+      <div class="g2" style="margin-bottom:16px;">
+        <div class="card">
+          <div class="c-lbl">% Cobranza promedio por zona</div>
+          <div class="blist" style="margin-top:14px;" id="bar-cobranza-z"></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Rotación de cartera (cobrado / ventas)</div>
+          <div class="blist" style="margin-top:14px;" id="bar-rotacion-z"></div>
+        </div>
+      </div>
+
+      <!-- EVOLUCIÓN COBRANZA -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="c-lbl">Evolución % cobranza por zona — semana a semana</div>
+        <div class="ch ch-300"><canvas id="c_vend_lines"></canvas></div>
+      </div>
+
+      <!-- CARDS DETALLE -->
+      <div id="vend-detail"></div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: VENTAS
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-ventas">
+      <div class="page-h">
+        <div class="page-h-title">Análisis de Ventas</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-ventas','Ventas')">⬇ PDF</button></div>
+        <div class="page-h-sub" id="ventas-sub">—</div>
+      </div>
+      <div class="filterbar" style="position:static;border:1px solid var(--line);border-radius:10px;margin-bottom:16px;padding:0 16px;">
+        <span class="fb-label">Vendedor</span><div class="fb-sep"></div>
+        <div class="fb-quick" id="ventas-vend-btns"></div>
+      </div>
+      <div class="g4" id="kpis-ventas"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="c-lbl">Ventas semanales consolidadas</div>
+          <div class="ch ch-260"><canvas id="c_ventas_global"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Participación en ventas por zona</div>
+          <div class="ch ch-260"><canvas id="c_ventas_pie"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="c-lbl">Ventas apiladas por zona — semana a semana</div>
+        <div class="ch ch-300"><canvas id="c_ventas_stack"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: COSTOS
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-costos">
+      <div class="page-h">
+        <div class="page-h-title">Estructura de Costos</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-costos','Costos')">⬇ PDF</button></div>
+        <div class="page-h-sub">Análisis de costos fijos, semivariables y variables</div>
+      </div>
+      <div class="g4" id="kpis-costos"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="c-lbl">Composición de costos</div>
+          <div class="ch ch-260"><canvas id="c_costos_comp"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Desglose por ítem</div>
+          <div class="blist" style="margin-top:14px;" id="bar-costos-det"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="c-lbl" style="margin-bottom:12px;">Tabla de costos detallada</div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>Concepto</th><th>Tipo</th><th>Monto mensual</th><th>% del total</th><th>% de ingresos</th></tr></thead>
+            <tbody id="tbl-costos"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: ACREEDORES
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-deuda">
+      <div class="page-h">
+        <div class="page-h-title">Acreedores & Deuda</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-deuda','Acreedores')">⬇ PDF</button></div>
+        <div class="page-h-sub">Estado de obligaciones financieras y presión de caja</div>
+      </div>
+      <div class="g4" id="kpis-deuda"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="c-lbl">Distribución de saldo por acreedor</div>
+          <div class="ch ch-260"><canvas id="c_acr_pie"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Capital original vs saldo adeudado</div>
+          <div class="ch ch-260"><canvas id="c_acr_bar"></canvas></div>
+        </div>
+      </div>
+      <div class="g3" id="acr-cards"></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="c-lbl">Cuota mensual consolidada (próximos 12 meses)</div>
+        <div class="ch ch-220"><canvas id="c_acr_cuotas"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: FLUJO DE CAJA
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-flujo">
+      <div class="page-h">
+        <div class="page-h-title">Flujo de Caja</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-flujo','Flujo')">⬇ PDF</button></div>
+        <div class="page-h-sub">Balance patrimonial y análisis de liquidez</div>
+      </div>
+      <div class="g4" id="kpis-flujo"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="c-lbl">Activo vs Pasivo</div>
+          <div class="ch ch-260"><canvas id="c_balance"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="c-lbl">Composición del activo</div>
+          <div class="ch ch-260"><canvas id="c_activo_pie"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="c-lbl" style="margin-bottom:10px;">Cuenta de resultados mensual</div>
+        <div id="flujo-resultados"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: HISTORIAL SEMANAL
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-historial">
+      <div class="page-h">
+        <div class="page-h-title">Historial Semanal</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-historial','Historial')">⬇ PDF</button></div>
+        <div class="page-h-sub" id="hist-sub">Evolución completa desde el inicio del registro</div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <div class="c-lbl">Cobranza global y ventas — todas las semanas registradas</div>
+        <div class="ch ch-340"><canvas id="c_hist_full"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="c-lbl" style="margin-bottom:12px;">Registro completo semana a semana</div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>#</th><th>Semana</th><th>A Cobrar</th><th>Cobrado</th><th>Sin Cobrar</th><th>% Cob.</th><th>Δ vs ant.</th><th>Ventas</th><th>Luis</th><th>Maxi</th><th>Fernando</th><th>Julián</th><th>Facundo</th></tr></thead>
+            <tbody id="tbl-hist"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         SECCIÓN: ALERTAS
+    ════════════════════════════════════ -->
+    <div class="section" id="sec-alertas">
+      <div class="page-h">
+        <div class="page-h-title">Centro de Alertas</div>
+        <div class="page-h-actions"><button class="pdf-btn" onclick="exportPDF('sec-alertas','Alertas')">⬇ PDF</button></div>
+        <div class="page-h-sub">Diagnóstico automático basado en los datos del Excel</div>
+      </div>
+      <div id="alertas-container"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main-wrap -->
+</div><!-- /shell -->
+
+<script>
+/* ══════════════════════════════════════════════
+   GLOBALS
+══════════════════════════════════════════════ */
+let DATA = null;
+const VCOLORS = ['#a8ff3e','#38b6ff','#ffb038','#ff3d5a','#c084fc'];
+const VNAMES  = ['LUIS','MAXI','FERNANDO','JULIAN','FACUNDO'];
+const MESES   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+Chart.defaults.color = '#50597a';
+Chart.defaults.borderColor = 'rgba(45,52,80,.6)';
+const CTICK = { color:'#50597a', font:{ family:'Fira Code', size:10 } };
+const CGRID = { color:'rgba(29,34,53,.9)' };
+const CLEG  = { labels:{ color:'#8892b8', font:{ family:'Fira Code', size:10 }, boxWidth:10, padding:12 } };
+
+let charts = {};
+function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// Esperar carga de Excel — no pre-cargar datos de muestra
+window.addEventListener('DOMContentLoaded', () => {
+  // Mostrar pantalla de bienvenida hasta que el usuario cargue su Excel
+  document.getElementById('uploadScreen').style.display = '';
+  document.querySelectorAll('.section').forEach(s => { s.classList.remove('active'); s.style.display='none'; });
+  document.getElementById('filterBar').style.display = 'none';
+});
+
+/* ══════════════════════════════════════════════
+   NAVEGACIÓN
+══════════════════════════════════════════════ */
+const TITLES = {
+  rentabilidad:'KPIs del Negocio', cobranza:'Cobranza Global',
+  kpis_op:'KPIs Operativos',
+  vendedores:'Vendedores', ventas:'Ventas',
+  costos:'Costos', deuda:'Acreedores', flujo:'Flujo de Caja',
+  historial:'Historial Semanal', alertas:'Alertas'
+};
+document.querySelectorAll('.sb-item').forEach(el => {
+  el.addEventListener('click', () => {
+    if(!DATA) return;
+    const sec = el.dataset.sec;
+    document.querySelectorAll('.sb-item').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x => { x.classList.remove('active'); x.style.display='none'; });
+    el.classList.add('active');
+    const target = document.getElementById('sec-'+sec);
+    if(target) { target.classList.add('active'); target.style.display='block'; }
+    document.getElementById('topTitle').textContent = TITLES[sec] || sec;
+  });
+});
+
+/* ══════════════════════════════════════════════
+   FILE HANDLING
+══════════════════════════════════════════════ */
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+}
+function handleFile(e) {
+  const file = e.target.files[0];
+  if(file) processFile(file);
+}
+function processFile(file) {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('show');
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    setTimeout(() => {
+      try {
+        const wb = XLSX.read(e.target.result, { type:'binary', cellDates:false });
+        DATA = parseWorkbook(wb);
+
+        // Ocultar pantalla de bienvenida
+        document.getElementById('uploadScreen').style.display = 'none';
+
+        // Desactivar todas las secciones
+        document.querySelectorAll('.section').forEach(s => {
+          s.classList.remove('active');
+          s.style.display = 'none';
+        });
+
+        // Activar rentabilidad
+        const sec = document.getElementById('sec-rentabilidad');
+        sec.classList.add('active');
+        sec.style.display = 'block';
+
+        // Marcar nav item activo
+        document.querySelectorAll('.sb-item').forEach(x => x.classList.remove('active'));
+        document.querySelector('[data-sec="rentabilidad"]').classList.add('active');
+
+        // Render todo
+        renderAll();
+
+      } catch(err) {
+        console.error('Error completo:', err);
+        alert('Error al leer el Excel: ' + err.message + '\n\nRevisá la consola para más detalles.');
+      }
+      overlay.classList.remove('show');
+    }, 100);
+  };
+  reader.onerror = function() {
+    alert('No se pudo leer el archivo.');
+    overlay.classList.remove('show');
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* ══════════════════════════════════════════════
+   DATOS BASE (extraídos del Excel real)
+   Se usan como base y se actualizan al cargar Excel nuevo
+══════════════════════════════════════════════ */
+const BASE_DATA = {
+  "global": [],
+  "zonas": [
+    {"name":"LUIS",    "color":"#a8ff3e", "rows":[]},
+    {"name":"MAXI",    "color":"#38b6ff", "rows":[]},
+    {"name":"FERNANDO","color":"#ffb038", "rows":[]},
+    {"name":"JULIAN",  "color":"#ff3d5a", "rows":[]},
+    {"name":"FACUNDO", "color":"#c084fc", "rows":[]}
+  ],
+  "acreedores": [],
+  "costos": {"items":[], "semivariables":0, "variables":0, "fijos":0, "total":0},
+  "flujo": {"activo_total":0,"realizables":0,"disponible":0,"caja":0,"banco":0,"incobrables":0,"pasivo_total":0,"deuda_bancaria":0,"inversores":0,"ventas_mes":0,"consumos":0,"salarios":0,"operativos":0,"pago_pasivos":0,"cash_flow":0},
+  "rent": {"colocacion":0,"int_cobrados":0,"int_esperados":0,"break_even":0,"incobrables":0,"costo_cobranza":0,"costos_estructura":0,"resultado_neto":0,"roi":0,"saldo_residual":0}
+};
+
+/* ══════════════════════════════════════════════
+   PARSE WORKBOOK — Lee el Excel nuevo y actualiza
+══════════════════════════════════════════════ */
+function parseWorkbook(wb) {
+  const d = JSON.parse(JSON.stringify(BASE_DATA));
+  const log = []; // log de debug visible al usuario
+
+  // ── Helpers ──
+  const asNum = v => {
+    if(v === null || v === undefined || v === '') return 0;
+    if(typeof v === 'number') return v;
+    const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+    return isNaN(n) ? 0 : n;
+  };
+
+  // Convierte CUALQUIER formato de fecha a "DD/MM" Y devuelve también la fecha ISO completa
+  const toSemFecha = v => {
+    if(v === null || v === undefined) return { sem: null, fecha: null };
+    let dt = null;
+    // Número serial de Excel
+    if(typeof v === 'number' && v > 40000 && v < 60000) {
+      const ms = Math.round((v - 25569) * 86400 * 1000);
+      dt = new Date(ms);
+    } else if(v instanceof Date) {
+      dt = v;
+    } else if(typeof v === 'string') {
+      const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(iso) dt = new Date(v);
+      else {
+        const dmy = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+        if(dmy) {
+          const y = dmy[3].length === 2 ? 2000 + parseInt(dmy[3]) : parseInt(dmy[3]);
+          dt = new Date(Date.UTC(y, parseInt(dmy[2])-1, parseInt(dmy[1])));
+        } else {
+          const dm = v.match(/^(\d{1,2})\/(\d{1,2})$/);
+          if(dm) {
+            // Solo DD/MM sin año — no podemos construir fecha completa
+            const sem = dm[1].padStart(2,'0') + '/' + dm[2].padStart(2,'0');
+            return { sem, fecha: null };
+          }
+        }
+      }
+    }
+    if(!dt || isNaN(dt)) return { sem: null, fecha: null };
+    const sem = String(dt.getUTCDate()).padStart(2,'0') + '/' + String(dt.getUTCMonth()+1).padStart(2,'0');
+    const fecha = dt.getUTCFullYear() + '-' +
+      String(dt.getUTCMonth()+1).padStart(2,'0') + '-' +
+      String(dt.getUTCDate()).padStart(2,'0');
+    return { sem, fecha };
+  };
+
+  // Mantener toSem por compatibilidad
+  const toSem = v => toSemFecha(v).sem;
+
+  // Lee una hoja de cobranza (ANALISIS GLOBAL o Z1-Z5)
+  // Columnas: [0]=fecha [1]=A_COBRAR [2]=COBRADO [3]=PCT [4]=BRECHA [5]=VENTAS
+  const parseCobranzaSheet = (ws, minRows=5) => {
+    if(!ws) return null;
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+    const result = [];
+    rows.forEach((row, ri) => {
+      if(!row || !row[0]) return;
+      const { sem, fecha } = toSemFecha(row[0]);
+      if(!sem) return;
+      const ac = asNum(row[1]);
+      const co = asNum(row[2]);
+      // Siempre recalcular pct desde co/ac — más confiable que leer la columna
+      // La columna puede tener valores >1 (102%) que el código dividía incorrectamente
+      let pct = ac > 0 ? co / ac : 0;
+      // Si pct calculado es 0 (ac=0), usar columna como fallback
+      if(pct === 0 && row[3]) {
+        pct = asNum(row[3]);
+        if(pct > 1.5) pct = pct / 100; // claramente en porcentaje (ej: 82.3)
+      }
+      // Clamp pct a rango razonable [0, 1.5] — valores fuera de rango son errores de datos
+      pct = Math.min(Math.max(pct, 0), 1.5);
+      const v  = asNum(row[5]);
+      if(ac > 100000) {
+        result.push({ sem, fecha, ac, co, pct, v });
+      }
+    });
+    if(result.length < minRows) return null;
+
+    // ── Corrección de años anómalos en el Excel ──
+    // Ejemplo real: Excel guarda "22/12/2025" como "22/12/2026" por error de tipeo.
+    // Si una fecha salta >180 días respecto a la anterior, intentar corregir el año.
+    for(let i = 1; i < result.length; i++) {
+      if(!result[i-1].fecha || !result[i].fecha) continue;
+      const dPrev = new Date(result[i-1].fecha);
+      const dCurr = new Date(result[i].fecha);
+      const diffDays = (dCurr - dPrev) / 86400000;
+      // Salto hacia adelante anormalmente grande → restar 1 año
+      if(diffDays > 180) {
+        const fix = new Date(dCurr);
+        fix.setUTCFullYear(fix.getUTCFullYear() - 1);
+        const diffFix = (fix - dPrev) / 86400000;
+        if(diffFix >= -7 && diffFix <= 60) {
+          result[i].fecha = fix.getUTCFullYear() + '-' +
+            String(fix.getUTCMonth()+1).padStart(2,'0') + '-' +
+            String(fix.getUTCDate()).padStart(2,'0');
+        }
+      }
+      // Retroceso → sumar 1 año
+      if(diffDays < -7) {
+        const fix = new Date(dCurr);
+        fix.setUTCFullYear(fix.getUTCFullYear() + 1);
+        const diffFix = (fix - dPrev) / 86400000;
+        if(diffFix >= -7 && diffFix <= 60) {
+          result[i].fecha = fix.getUTCFullYear() + '-' +
+            String(fix.getUTCMonth()+1).padStart(2,'0') + '-' +
+            String(fix.getUTCDate()).padStart(2,'0');
+        }
+      }
+    }
+
+    // Ordenar por fecha corregida
+    result.sort((a,b) => {
+      if(a.fecha && b.fecha) return a.fecha.localeCompare(b.fecha);
+      return 0;
+    });
+
+    return result;
+  };
+
+  // ── ANALISIS GLOBAL ──
+  try {
+    const rows = parseCobranzaSheet(wb.Sheets['ANALISIS GLOBAL'], 10);
+    if(rows) {
+      d.global = rows;
+      log.push(`✅ ANALISIS GLOBAL: ${rows.length} semanas — última: ${rows[rows.length-1].sem}`);
+    } else {
+      log.push(`⚠️ ANALISIS GLOBAL: no se pudieron leer filas`);
+    }
+  } catch(e) { log.push(`❌ GLOBAL error: ${e.message}`); }
+
+  // ── ZONAS ──
+  const zSheets = ['Z1 LUIS','Z2 MAXI','Z3 FERNANDO','Z4 JULIAN','Z5 FACUNDO'];
+  zSheets.forEach((sname, zi) => {
+    try {
+      const rows = parseCobranzaSheet(wb.Sheets[sname], 5);
+      if(rows) {
+        d.zonas[zi].rows = rows;
+        log.push(`✅ ${sname}: ${rows.length} semanas`);
+      } else {
+        log.push(`⚠️ ${sname}: sin datos`);
+      }
+    } catch(e) { log.push(`❌ ${sname}: ${e.message}`); }
+  });
+
+  // ── COSTOS ──
+  try {
+    const ws = wb.Sheets['ESTRUCTURA DE COSTOS'];
+    if(ws) {
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+      let found = 0;
+      rows.forEach(row => {
+        if(!row || !row[0] || typeof row[0] !== 'string') return;
+        const k = row[0].toUpperCase().trim();
+        // Tomar el primer valor numérico positivo mayor a 100000 en la fila
+        let v = 0;
+        for(let j = 1; j < row.length; j++) {
+          const n = asNum(row[j]);
+          if(n > 100000) { v = n; break; }
+        }
+        if(v <= 0) return;
+        if(k.includes('COSTOS SEMIVARIABLE')) { d.costos.semivariables = v; found++; }
+        if(k.includes('COSTOS VARIABLES') || (k.includes('VARIABLES') && !k.includes('SEMI'))) { d.costos.variables = v; found++; }
+        if(k.includes('COSTOS FIJOS')) { d.costos.fijos = v; found++; }
+        if(k.includes('COSTOS TOTALES')) { d.costos.total = v; found++; }
+      });
+      log.push(found > 0 ? `✅ COSTOS: total=${d.costos.total.toLocaleString('es-AR')}` : `⚠️ COSTOS: no se encontraron`);
+    }
+  } catch(e) { log.push(`❌ COSTOS: ${e.message}`); }
+
+  // ── FLUJO ──
+  try {
+    const ws = wb.Sheets['FLUJO DE EFECTIVO'];
+    if(ws) {
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+      let found = 0;
+      rows.forEach(row => {
+        if(!row || !row[0] || typeof row[0] !== 'string') return;
+        const k = row[0].toUpperCase().trim();
+        // Último número positivo de la fila (columna más reciente)
+        let v = 0;
+        for(let j = row.length-1; j >= 1; j--) {
+          const n = asNum(row[j]);
+          if(n > 0) { v = n; break; }
+        }
+        if(v <= 0) return;
+        if(k.includes('TOTAL ACTIVO'))   { d.flujo.activo_total = v; found++; }
+        if(k.includes('REALIZABLES'))    { d.flujo.realizables = v; found++; }
+        if(k.includes('DISPONIBLE'))     { d.flujo.disponible = v; found++; }
+        if(k.includes('TOTAL PASIVO'))   { d.flujo.pasivo_total = v; found++; }
+        if(k.includes('DEUDAS CON ENTIDADES')) { d.flujo.deuda_bancaria = v; found++; }
+        if(k.includes('CASH FLOW'))      { d.flujo.cash_flow = v; found++; }
+        if(k.includes('VENTAS') && !k.includes('OTROS')) { d.flujo.ventas_mes = v; found++; }
+      });
+      log.push(found > 0 ? `✅ FLUJO: activo=${d.flujo.activo_total.toLocaleString('es-AR')}` : `⚠️ FLUJO: no se encontraron campos`);
+    }
+  } catch(e) { log.push(`❌ FLUJO: ${e.message}`); }
+
+  // ── Mostrar debug ──
+  showParseLog(log);
+
+  d.stats = calcStats(d);
+  return d;
+}
+
+function showParseLog(log) {
+  // Crear o actualizar el panel de debug
+  let el = document.getElementById('parseDebug');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'parseDebug';
+    el.style.cssText = 'position:fixed;bottom:60px;right:16px;background:#111;border:1px solid #333;border-radius:8px;padding:12px 16px;font-size:11px;font-family:monospace;z-index:9999;max-width:360px;box-shadow:0 4px 20px #000a';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div style="color:#a8ff3e;font-weight:bold;margin-bottom:6px">📊 Resultado de lectura del Excel</div>` +
+    log.map(l => `<div style="color:${l.startsWith('✅')?'#a8ff3e':l.startsWith('⚠️')?'#ffb038':'#ff3d5a'};margin:2px 0">${l}</div>`).join('') +
+    `<div style="color:#666;margin-top:6px;font-size:10px">Click para cerrar · cierra solo en 8s</div>`;
+  el.onclick = () => el.remove();
+  setTimeout(() => { if(document.getElementById('parseDebug')) el.remove(); }, 8000);
+}
+
+function fmt_sem(dt) {
+  if(!dt) return '—';
+  return String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0');
+}
+
+function calcStats(d) {
+  const g = d.global;
+  if(!g.length) return {};
+  const pcts = g.map(x=>x.pct);
+  const n = g.length;
+
+  // Ultimas 4 semanas = mes en curso
+  const mes     = g.slice(-4);
+  const ac_mes  = mes.reduce((a,x)=>a+x.ac, 0);
+  const co_mes  = mes.reduce((a,x)=>a+x.co, 0);
+  const v_mes   = mes.reduce((a,x)=>a+x.v,  0);   // ventas = capital colocado
+  const pct_mes = ac_mes > 0 ? co_mes / ac_mes : 0;
+
+  // ── MODELO FINANCIERO ──
+  // Ventas × tasa × cobranza − costos = resultado
+  const TASA        = 0.40;
+  const costos_tot  = d.costos.total;
+
+  const ing_teorico   = Math.round(v_mes * TASA);           // ventas × 40%
+  const ing_real      = Math.round(ing_teorico * pct_mes);  // × % cobranza
+  const resultado_neto = Math.round(ing_real - costos_tot);
+
+  // Break-even: ventas mínimas necesarias
+  // 0 = ventas × 0.40 × pct − costos  →  ventas_be = costos / (0.40 × pct)
+  const break_even_ventas = pct_mes > 0
+    ? Math.round(costos_tot / (TASA * pct_mes))
+    : 0;
+
+  const roi_val = v_mes > 0 ? resultado_neto / v_mes : 0;
+
+  d.rent = {
+    colocacion:      v_mes,
+    cartera_activa:  v_mes,
+    int_esperados:   ing_teorico,
+    int_cobrados:    ing_real,
+    incobrables:     0,
+    costo_cobranza:  0,
+    costos_estructura: costos_tot,
+    resultado_neto,
+    roi:             roi_val,
+    break_even:      break_even_ventas,
+    saldo_residual:  Math.max(0, resultado_neto),
+  };
+
+  return {
+    n,
+    avg_pct:  pcts.reduce((a,b)=>a+b,0)/n,
+    max_pct:  Math.max(...pcts),
+    min_pct:  Math.min(...pcts),
+    last_pct: pcts[n-1],
+    prev_pct: pcts[n-2] || pcts[n-1],
+    total_cobrado:  g.reduce((a,x)=>a+x.co, 0),
+    total_a_cobrar: g.reduce((a,x)=>a+x.ac, 0),
+    total_ventas:   g.reduce((a,x)=>a+x.v,  0),
+    last_cobrado:  g[n-1].co,
+    last_a_cobrar: g[n-1].ac,
+    last_ventas:   g[n-1].v,
+    primer_sem: g[0].sem,
+    ultimo_sem: g[n-1].sem,
+    cuota_total: d.acreedores.reduce((a,x)=>a+x.cuota, 0),
+    deuda_total: d.acreedores.reduce((a,x)=>a+x.saldo, 0),
+    ac_mes, co_mes, v_mes, pct_mes,
+  };
+}
+
+/* ══════════════════════════════════════════════
+   FORMATTERS
+══════════════════════════════════════════════ */
+const M  = n => '$'+(n/1e6).toFixed(1)+'M';
+const N  = n => '$'+Math.round(n).toLocaleString('es-AR');
+const P  = n => (n*100).toFixed(1)+'%';
+const pctColor = p => p>=.90?'var(--lime)':p>=.80?'var(--sky)':p>=.70?'var(--amber)':'var(--red)';
+const pctPill  = p => p>=.90?'p-lime':p>=.80?'p-sky':p>=.70?'p-amber':'p-red';
+const pctLabel = p => p>=.90?'EXCELENTE':p>=.80?'NORMAL':p>=.70?'BAJO':'CRÍTICO';
+const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+const sum = arr => arr.reduce((a,b)=>a+b,0);
+
+/* ══════════════════════════════════════════════
+   RENDER ALL
+══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   EXPORT PDF
+══════════════════════════════════════════════ */
+function exportPDF(secId, label) {
+  const sec = document.getElementById(secId);
+  if(!sec) return;
+
+  // 1. Capturar todos los canvas como imágenes PNG (datos base64)
+  const imgs = {};
+  sec.querySelectorAll('canvas').forEach(cv => {
+    try { if(cv.id) imgs[cv.id] = cv.toDataURL('image/png'); } catch(e) {}
+  });
+
+  // 2. Clonar el contenido actual del DOM (ya renderizado con JS)
+  const clone = sec.cloneNode(true);
+
+  // 3. Reemplazar canvas con <img> en el clon
+  clone.querySelectorAll('canvas').forEach(cv => {
+    const wrap = cv.closest('.ch') || cv.parentNode;
+    const src = imgs[cv.id];
+    if(src) {
+      const img = document.createElement('img');
+      img.src = src;
+      img.style.cssText = 'width:100%;height:auto;display:block;border-radius:6px;';
+      cv.replaceWith(img);
+    } else {
+      cv.remove();
+    }
+  });
+
+  // 4. Quitar botones y elementos no imprimibles
+  clone.querySelectorAll('.pdf-btn,.page-h-actions,#parseDebug').forEach(el=>el.remove());
+
+  // 5. Crear overlay de impresión sobre el body actual
+  //    Esto evita abrir una nueva ventana y mantiene todos los estilos
+  const overlay = document.createElement('div');
+  overlay.id = '__print_overlay__';
+  overlay.style.cssText = [
+    'position:fixed','top:0','left:0','width:100%','height:100%',
+    'background:#0b0d14','z-index:99999','overflow:auto',
+    'padding:24px','box-sizing:border-box'
+  ].join(';');
+
+  const fecha = new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;justify-content:space-between;font-family:var(--fm);font-size:.65rem;color:var(--frost3);border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:20px;';
+  hdr.innerHTML = `<span style="color:var(--lime);font-weight:700">GV GROUP</span><span style="color:var(--frost)">${label}</span><span>${fecha}</span>`;
+
+  overlay.appendChild(hdr);
+  overlay.appendChild(clone);
+  document.body.appendChild(overlay);
+
+  // 6. Ocultar todo lo demás al imprimir
+  const printStyle = document.createElement('style');
+  printStyle.id = '__print_style__';
+  printStyle.innerHTML = `
+    @media print {
+      @page { size: A4 landscape; margin: 8mm; }
+      body > *:not(#__print_overlay__) { display: none !important; }
+      #__print_overlay__ {
+        position: static !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        background: #0b0d14 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+    }`;
+  document.head.appendChild(printStyle);
+
+  // 7. Imprimir y limpiar
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      overlay.remove();
+      printStyle.remove();
+    }, 1000);
+  }, 200);
+}
+
+/* ══════════════════════════════════════════════
+   FILTER SYSTEM — período global
+══════════════════════════════════════════════ */
+
+// Estado actual del filtro (índices sobre DATA.global)
+let FILTER = { desde: 0, hasta: -1 }; // -1 = último
+
+function initFilter() {
+  const rows = DATA.global;
+  const desde = document.getElementById('fbDesde');
+  const hasta = document.getElementById('fbHasta');
+  desde.innerHTML = rows.map((r,i) => `<option value="${i}">${r.sem}</option>`).join('');
+  hasta.innerHTML = rows.map((r,i) => `<option value="${i}">${r.sem}</option>`).join('');
+  desde.value = 0;
+  hasta.value = rows.length - 1;
+  FILTER = { desde: 0, hasta: rows.length - 1 };
+  document.getElementById('filterBar').style.display = 'flex';
+
+  // Construir botones de mes
+  const mesesMap = {}; // "MM/YYYY" → {label, desde, hasta}
+  const MESES_LABEL = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  rows.forEach((r, i) => {
+    if(!r.fecha) return;
+    const d = new Date(r.fecha);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+    if(!mesesMap[key]) {
+      mesesMap[key] = {
+        label: MESES_LABEL[d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()).slice(2),
+        desde: i, hasta: i
+      };
+    } else {
+      mesesMap[key].hasta = i;
+    }
+  });
+
+  const fbMeses = document.getElementById('fbMeses');
+  fbMeses.innerHTML = Object.entries(mesesMap).map(([key, m]) =>
+    `<button class="fb-q" data-month="${key}" onclick="applyMonthPeriod('${key}',${m.desde},${m.hasta})">${m.label}</button>`
+  ).join('');
+
+  updateFbInfo();
+}
+
+function applyQuickPeriod(period) {
+  const n = DATA.global.length;
+  document.querySelectorAll('.fb-q').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-period="${period}"]`).classList.add('active');
+  if(period === 'all') {
+    FILTER = { desde: 0, hasta: n - 1 };
+  } else {
+    FILTER = { desde: Math.max(0, n - period), hasta: n - 1 };
+  }
+  const desde = document.getElementById('fbDesde');
+  const hasta = document.getElementById('fbHasta');
+  desde.value = FILTER.desde;
+  hasta.value = FILTER.hasta;
+  updateFbInfo();
+  renderFiltered();
+}
+
+function applyRangePeriod() {
+  // Clear quick buttons
+  document.querySelectorAll('.fb-q').forEach(b => b.classList.remove('active'));
+  const d = parseInt(document.getElementById('fbDesde').value);
+  const h = parseInt(document.getElementById('fbHasta').value);
+  if(d > h) { document.getElementById('fbDesde').value = h; FILTER.desde = h; }
+  else { FILTER.desde = d; FILTER.hasta = h; }
+  updateFbInfo();
+  renderFiltered();
+}
+
+function applyMonthPeriod(key, desde, hasta) {
+  document.querySelectorAll('.fb-q').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-month="${key}"]`).classList.add('active');
+  FILTER = { desde, hasta };
+  document.getElementById('fbDesde').value = desde;
+  document.getElementById('fbHasta').value = hasta;
+  updateFbInfo();
+  renderFiltered();
+}
+
+function updateFbInfo() {
+  const rows = DATA.global;
+  const n = FILTER.hasta - FILTER.desde + 1;
+  const d = rows[FILTER.desde];
+  const h = rows[FILTER.hasta];
+  document.getElementById('fbInfo').textContent =
+    `${n} sem · ${d.sem} → ${h.sem}`;
+}
+
+// Devuelve una copia de DATA con global y zonas.rows filtrados al rango activo
+function getFilteredData() {
+  const fd = JSON.parse(JSON.stringify(DATA));
+  const allGlobal = DATA.global;
+  const { desde, hasta } = FILTER;
+
+  // Filtrar global por índice
+  fd.global = allGlobal.slice(desde, hasta + 1);
+
+  // ── Estrategia de filtro de zonas ──
+  // Prioridad 1: si las zonas tienen 'fecha' (Excel nuevo cargado) → comparar fechas directamente
+  // Prioridad 2: si las zonas tienen 'fecha' en global → usar semToFecha como puente
+  // Prioridad 3: fallback posicional → usar el set de sems del global filtrado
+
+  const globalFiltrado = fd.global;
+  const semsEnRango = new Set(globalFiltrado.map(r => r.sem));
+
+  // Mapa sem→fecha construido desde el global COMPLETO (incluye el recién cargado)
+  const semToFecha = {};
+  allGlobal.forEach(r => { if(r.fecha) semToFecha[r.sem] = r.fecha; });
+
+  // Rango de fechas si el global tiene fechas
+  const fechaDesde = allGlobal[desde]?.fecha ? new Date(allGlobal[desde].fecha) : null;
+  const fechaHasta = allGlobal[hasta]?.fecha ? new Date(allGlobal[hasta].fecha) : null;
+
+  fd.zonas = fd.zonas.map(z => {
+    const filtRows = z.rows.filter(r => {
+      // Caso 1: la fila de zona tiene 'fecha' propia (Excel nuevo) → comparar directo
+      if(r.fecha && fechaDesde && fechaHasta) {
+        const f = new Date(r.fecha);
+        return f >= fechaDesde && f <= fechaHasta;
+      }
+
+      // Caso 2: el sem de la zona existe en el mapa global → usar esa fecha
+      if(semToFecha[r.sem] && fechaDesde && fechaHasta) {
+        const f = new Date(semToFecha[r.sem]);
+        return f >= fechaDesde && f <= fechaHasta;
+      }
+
+      // Caso 3: fallback — el sem está en el set de sems del global filtrado
+      if(semsEnRango.has(r.sem)) return true;
+
+      // Caso 4: último fallback — parsear DD/MM con años del rango
+      if(fechaDesde && fechaHasta) {
+        const parts = r.sem.split('/');
+        if(parts.length === 2) {
+          const dd = parseInt(parts[0]), mm = parseInt(parts[1]) - 1;
+          const y1 = fechaDesde.getUTCFullYear();
+          const y2 = fechaHasta.getUTCFullYear();
+          for(let y = y1; y <= y2; y++) {
+            const f = new Date(Date.UTC(y, mm, dd));
+            if(f >= fechaDesde && f <= fechaHasta) return true;
+          }
+        }
+      }
+      return false;
+    }).sort((a,b) => {
+      const fa = a.fecha || semToFecha[a.sem];
+      const fb = b.fecha || semToFecha[b.sem];
+      if(fa && fb) return fa.localeCompare(fb);
+      return 0;
+    });
+    return { ...z, rows: filtRows };
+  });
+
+  fd.stats = calcStats(fd);
+  return fd;
+}
+
+function renderFiltered() {
+  const fd = getFilteredData();
+  const s  = fd.stats;
+
+  // Reset filtros de vendedor al cambiar período
+  COB_VEND = 'all';
+  VENTAS_VEND = 'all';
+  KPIS_OP_VEND = 'all';
+  // Limpiar flags de "built" para que se reconstruyan con los nuevos datos
+  const cobBtns = document.getElementById('cob-vend-btns');
+  const ventBtns = document.getElementById('ventas-vend-btns');
+  const kpisBtns = document.getElementById('kpis-op-vend-btns');
+  if(cobBtns) { cobBtns.dataset.built = ''; cobBtns.innerHTML = ''; }
+  if(ventBtns) { ventBtns.dataset.built = ''; ventBtns.innerHTML = ''; }
+  if(kpisBtns) { kpisBtns.dataset.built = ''; kpisBtns.innerHTML = ''; }
+
+  document.getElementById('chipPeriodo').textContent = `${s.primer_sem} → ${s.ultimo_sem}`;
+  document.getElementById('chipSemanas').textContent = `${s.n} semanas`;
+  const rentable = fd.rent.resultado_neto >= 0;
+  const chipE = document.getElementById('chipEstado');
+  chipE.textContent = rentable ? '● RENTABLE' : '● EN PÉRDIDA';
+  chipE.className = 'chip ' + (rentable ? 'lime' : 'red');
+
+  renderRentabilidad(fd,s);
+  renderProyeccion(fd,s);
+  renderCobranza(fd,s);
+  renderComparacionMensual(fd,s);
+  renderKpisOp(fd,s);
+  renderVendedores(fd,s);
+  renderVentas(fd,s);
+  renderCostos(fd,s);
+  renderDeuda(fd,s);
+  renderFlujo(fd,s);
+  renderHistorial(fd,s);
+  renderAlertas(fd,s);
+}
+
+function renderAll() {
+  const d = DATA; const s = d.stats;
+
+  // Update topbar
+  document.getElementById('sbStatusText').textContent = s.ultimo_sem ? `Datos al ${s.ultimo_sem}` : 'Cargado';
+  document.getElementById('chipPeriodo').textContent = `${s.primer_sem} → ${s.ultimo_sem}`;
+  document.getElementById('chipSemanas').textContent = `${s.n} semanas`;
+  const rentable = d.rent.resultado_neto >= 0;
+  const chipE = document.getElementById('chipEstado');
+  chipE.textContent = rentable ? '● RENTABLE' : '● EN PÉRDIDA';
+  chipE.className = 'chip ' + (rentable ? 'lime' : 'red');
+
+  // Init filter on first load
+  initFilter();
+
+  renderRentabilidad(d,s);
+  renderProyeccion(d,s);
+  renderCobranza(d,s);
+  renderComparacionMensual(d,s);
+  renderKpisOp(d,s);
+  renderVendedores(d,s);
+  renderVentas(d,s);
+  renderCostos(d,s);
+  renderDeuda(d,s);
+  renderFlujo(d,s);
+  renderHistorial(d,s);
+  renderAlertas(d,s);
+}
+
+/* ══════════════════════════════════════════════
+   RENTABILIDAD
+══════════════════════════════════════════════ */
+function renderRentabilidad(d,s) {
+  const r = d.rent;
+  const es_rentable = r.resultado_neto >= 0;
+  const casi = Math.abs(r.resultado_neto) < r.break_even * 0.05;
+
+  // ── Pre-calcular todos los KPIs ──
+  const cartera_total   = s.total_ventas;                        // Σ ventas = cartera colocada
+  const facturacion     = s.total_cobrado + (s.total_a_cobrar - s.total_cobrado); // = total a cobrar
+  const cobranza_total  = s.total_cobrado;
+  const ratio_cob       = s.avg_pct;
+  const brecha          = s.total_a_cobrar - s.total_cobrado;
+  const ing_fin_teo     = r.int_esperados;                       // ventas mes × 40%
+  const ing_fin_real    = r.int_cobrados;                        // × % cobranza
+  const utilidad_bruta  = ing_fin_real - d.costos.variables;    // ingresos - costos directos
+  const utilidad_neta   = r.resultado_neto;
+  const margen_neto     = ing_fin_real > 0 ? utilidad_neta / ing_fin_real : 0;
+  const roi             = r.roi;
+  const roa             = d.flujo.activo_total > 0 ? utilidad_neta / d.flujo.activo_total : 0;
+  const rotacion        = cartera_total > 0 ? s.co_mes / cartera_total : 0;
+  const cap_riesgo      = brecha;                                // brecha ≈ capital en riesgo
+  const costo_ing       = d.costos.total > 0 && ing_fin_real > 0 ? d.costos.total / ing_fin_real : 0;
+  const break_even      = r.break_even;
+  const apalancamiento  = d.costos.fijos > 0 ? ing_fin_real / d.costos.fijos : 0;
+  const avg_tasa_fondeo = d.acreedores.length > 0
+    ? d.acreedores.reduce((a,x)=>a+x.tasa,0) / d.acreedores.length : 0;
+  const spread          = roi - avg_tasa_fondeo;
+  // Incobrables: brecha del último mes como % de ventas del mes
+  const incobr_pct      = s.v_mes > 0 ? (s.ac_mes - s.co_mes) / s.ac_mes : 0;
+  const mora_pct        = incobr_pct; // proxy: sin datos de cartera vencida usamos brecha
+
+  // ── GRUPO 1: INGRESOS ──
+  const g1 = [
+    { n:'1. Cartera colocada',   v:M(cartera_total),      cls:'sky',   sub:'Σ ventas históricas',            tip:'Capital total prestado a clientes' },
+    { n:'2. Facturación total',  v:M(s.total_a_cobrar),   cls:'sky',   sub:'Σ a cobrar acumulado',           tip:'Total que debería cobrar sobre toda la cartera' },
+    { n:'3. Cobranza total',     v:M(cobranza_total),     cls:'lime',  sub:'Σ cobrado acumulado',            tip:'Dinero efectivamente ingresado' },
+    { n:'4. Ratio cobranza',     v:P(ratio_cob),          cls: ratio_cob>=.9?'lime':ratio_cob>=.8?'amber':'red', sub:ratio_cob>=.9?'✓ Excelente':ratio_cob>=.8?'Normal':'⚠ Riesgo', tip:'Cobrado / A cobrar' },
+    { n:'5. Brecha de cobranza', v:M(brecha),             cls:'red',   sub:`${P(1-ratio_cob)} sin cobrar`,  tip:'A cobrar − Cobrado = capital financiado a clientes' },
+  ];
+
+  // ── GRUPO 2: RIESGO ──
+  const g2 = [
+    { n:'6. Tasa incobrables',   v:P(incobr_pct),         cls: incobr_pct<.08?'lime':incobr_pct<.15?'amber':'red', sub:incobr_pct<.08?'Saludable':incobr_pct<.15?'Atención':'⚠ Problema', tip:'Brecha mes / A cobrar mes' },
+    { n:'7. Mora cartera',       v:P(mora_pct),           cls: mora_pct<.10?'lime':mora_pct<.20?'amber':'red',      sub:'proxy: brecha mensual',           tip:'Aproximación con datos disponibles' },
+    { n:'8. Concentración',      v:'Sin datos',           cls:'frost2', sub:'requiere top 10 clientes',      tip:'Top 10 clientes / cartera total — no disponible en Excel' },
+    { n:'9. Capital en riesgo',  v:M(cap_riesgo),         cls:'red',   sub:'brecha acumulada',               tip:'Capital prestado con riesgo de no cobrar' },
+  ];
+
+  // ── GRUPO 3: RENTABILIDAD ──
+  const g3 = [
+    { n:'10. Ing. fin. teórico',  v:M(ing_fin_teo),        cls:'sky',   sub:'ventas × 40%',                  tip:'Ingreso si la cobranza fuera 100%' },
+    { n:'11. Ing. fin. real',     v:M(ing_fin_real),        cls:'lime',  sub:`× ${P(s.pct_mes)} cobranza`,    tip:'Ingreso financiero ajustado por cobranza real' },
+    { n:'12. Utilidad bruta',     v:M(utilidad_bruta),      cls: utilidad_bruta>=0?'lime':'red', sub:'ing. real − costos directos', tip:'Ingresos menos costos variables' },
+    { n:'13. Utilidad neta',      v:M(utilidad_neta),       cls: utilidad_neta>=0?'lime':'red', sub:'resultado del mes',           tip:'Ingresos menos todos los costos' },
+    { n:'14. Margen neto',        v:P(margen_neto),         cls: margen_neto>=.10?'lime':margen_neto>=0?'amber':'red', sub:'% de ingresos que es ganancia', tip:'Utilidad neta / Ingresos financieros' },
+    { n:'15. ROI mensual',        v:P(roi),                 cls: roi>=0?'lime':'red',            sub:'sobre capital colocado',      tip:'Utilidad neta / ventas del mes' },
+    { n:'16. ROA operativo',      v:P(roa),                 cls: roa>=0?'lime':'red',            sub:'sobre activos totales',       tip:'Utilidad neta / Activo total' },
+  ];
+
+  // ── GRUPO 4: EFICIENCIA ──
+  const g4e = [
+    { n:'17. Rotación cartera',   v:P(rotacion),            cls:'sky',   sub:'cobrado mes / cartera',         tip:'Cuánto gira el capital — más alto = más eficiente' },
+    { n:'18. Eficiencia cobro',   v:P(s.pct_mes),               cls: s.pct_mes>=.9?'lime':s.pct_mes>=.8?'sky':'amber', sub:'cobrado / a cobrar (mes)',      tip:'% cobranza del mes en curso — últimas 4 semanas' },
+    { n:'19. Costo / ingresos',   v:P(costo_ing),           cls: costo_ing<.80?'lime':costo_ing<1?'amber':'red', sub:'peso de la estructura',       tip:'Costos totales / Ingresos — ideal < 80%' },
+    { n:'20. Break-even',         v:M(break_even),          cls:'amber', sub:`actual: ${M(r.colocacion)}`,    tip:'Ventas mínimas para cubrir costos — costos / 40%' },
+    { n:'21. Apalancamiento',     v:apalancamiento.toFixed(1)+'x', cls: apalancamiento>=2?'lime':'amber', sub:'ingresos / costos fijos',       tip:'Escalabilidad — más alto = más apalancado' },
+    { n:'Spread financiero',      v:P(spread),              cls: spread>=0?'lime':'red',         sub:`ROI ${P(roi)} − fondeo ${P(avg_tasa_fondeo)}`, tip:'Diferencia entre lo que ganás y lo que pagás' },
+  ];
+
+  // Render helper
+  const clsMap = {lime:'c-lime',red:'c-red',amber:'c-amber',sky:'c-sky',violet:'c-violet',frost2:''};
+  const kpiCard = k => `<div class="card-xs ${clsMap[k.cls]||''}" title="${k.tip}">
+    <div class="c-lbl" style="font-size:.63rem">${k.n}</div>
+    <div class="c-val ${k.cls}" style="font-size:1.1rem">${k.v}</div>
+    <div class="c-sub">${k.sub}</div>
+  </div>`;
+
+  // Inject groups after veredicto + original kpis-rent
+  const groupsHTML = `
+  <div class="kpi-group">
+    <div class="kpi-group-title">📈 Ingresos</div>
+    <div class="g5" id="kpis-ingresos"></div>
+  </div>
+  <div class="kpi-group">
+    <div class="kpi-group-title">⚠️ Riesgo</div>
+    <div class="g4" id="kpis-riesgo"></div>
+  </div>
+  <div class="kpi-group">
+    <div class="kpi-group-title">💰 Rentabilidad</div>
+    <div class="g6" id="kpis-rentab"></div>
+  </div>
+  <div class="kpi-group">
+    <div class="kpi-group-title">⚙️ Eficiencia</div>
+    <div class="g6" id="kpis-efic2"></div>
+  </div>`;
+
+  // Insert groups BEFORE break-even divider
+  const kpis_rent_el = document.getElementById('kpis-rent');
+  // Insert after kpis-rent
+  let groupsEl = document.getElementById('kpi-groups-container');
+  if(!groupsEl) {
+    groupsEl = document.createElement('div');
+    groupsEl.id = 'kpi-groups-container';
+    kpis_rent_el.insertAdjacentElement('afterend', groupsEl);
+  }
+  groupsEl.innerHTML = groupsHTML;
+
+  // Render each group
+  document.getElementById('kpis-ingresos').innerHTML = g1.map(kpiCard).join('');
+  document.getElementById('kpis-riesgo').innerHTML   = g2.map(kpiCard).join('');
+  document.getElementById('kpis-rentab').innerHTML   = g3.map(kpiCard).join('');
+  document.getElementById('kpis-efic2').innerHTML    = g4e.map(kpiCard).join('');
+
+
+  // Veredicto
+  const vBox = document.getElementById('veredictoBox');
+  vBox.className = 'veredicto ' + (casi ? 'neutro' : es_rentable ? 'positivo' : 'negativo');
+  document.getElementById('verd-tag').textContent = 'DIAGNÓSTICO DEL MES';
+  document.getElementById('verd-titulo').textContent = es_rentable ? '✓ EL NEGOCIO ES RENTABLE ESTE MES' : '✗ EL NEGOCIO ESTÁ EN PÉRDIDA ESTE MES';
+  document.getElementById('verd-titulo').style.color = es_rentable?'var(--lime)':'var(--red)';
+  document.getElementById('verd-desc').textContent = es_rentable
+    ? `Intereses cobrados: ${N(r.int_cobrados)} · Costos: ${N(r.costos_estructura)} · Incobrables: ${N(r.incobrables)} · Break-even superado en ${N(r.cartera_activa - r.break_even)}.`
+    : `Faltaron ${N(Math.abs(r.resultado_neto))} para cubrir todos los costos. Break-even: ${N(r.break_even)}. Ventas del mes: ${N(r.colocacion)}.`;
+  document.getElementById('verd-num').textContent = N(r.resultado_neto);
+  document.getElementById('verd-num').style.color = es_rentable?'var(--lime)':'var(--red)';
+  document.getElementById('verd-num-label').textContent = 'RESULTADO NETO DEL MES';
+
+  // KPIs
+  const kpis = [
+    {l:'ROI mensual',     v:P(r.roi),            cls:'lime',  c:'c-lime',  sub:'sobre capital invertido'},
+    {l:'Colocación',      v:M(r.colocacion),      cls:'sky',   c:'c-sky',   sub:'ventas del mes (capital colocado)'},
+    {l:'Int. cobrados',   v:M(r.int_cobrados),    cls:'lime',  c:'c-lime',  sub:`ventas × 40% × ${P(s.pct_mes)} cobranza`},
+    {l:'Incobrables',     v:M(r.incobrables),     cls:'red',   c:'c-red',   sub:`${P(r.incobrables/Math.max(s.last_ventas,1))} de ventas nuevas`},
+    {l:'Break-even ventas', v:M(r.break_even),    cls:'amber', c:'c-amber', sub:`ventas actuales: ${M(r.colocacion)}`},
+  ];
+  document.getElementById('kpis-rent').innerHTML = kpis.map(k=>
+    `<div class="card-xs ${k.c}"><div class="c-lbl">${k.l}</div><div class="c-val ${k.cls}">${k.v}</div><div class="c-sub">${k.sub}</div></div>`
+  ).join('');
+
+  // Break-even widget
+  const pct_be = Math.min((r.cartera_activa / r.break_even) * 100, 120);
+  const color_be = pct_be>=100?'var(--lime)':pct_be>=90?'var(--amber)':'var(--red)';
+  const marker_pos = Math.min((r.break_even / (r.break_even*1.2))*100, 100);
+  document.getElementById('be-widget').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:.68rem;margin-bottom:6px;">
+      <span class="muted">Ventas del mes</span><span style="color:${color_be}">${N(r.colocacion)}</span>
+    </div>
+    <div class="be-track">
+      <div class="be-fill" style="width:${pct_be.toFixed(1)}%;background:${color_be};color:${pct_be>15?'var(--ink)':'transparent'}">${pct_be.toFixed(0)}%</div>
+      <div class="be-marker" style="left:${marker_pos.toFixed(1)}%"></div>
+    </div>
+    <div class="be-label"><span>$0</span><span style="color:var(--frost)">Break-even: ${N(r.break_even)}</span><span>${N(r.break_even*1.2)}</span></div>
+    <div style="margin-top:14px;font-size:.72rem;color:var(--frost3);">
+      ${pct_be>=100
+        ? `<span style="color:var(--lime)">✓ Cartera supera el break-even por ${N(r.cartera_activa-r.break_even)}</span>`
+        : `<span style="color:var(--red)">✗ Faltan ${N(r.break_even-r.cartera_activa)} en cartera para el break-even</span>`}
+    </div>
+    <div style="margin-top:16px;" id="be-extra">
+      <div class="srow"><div class="srow-l">Ing. financiero teórico (ventas × 40%)</div><div class="srow-r lime">${N(r.int_esperados)}</div></div>
+      <div class="srow"><div class="srow-l">Ing. financiero real (× % cobranza)</div><div class="srow-r amber">${N(r.int_cobrados)}</div></div>
+      <div class="srow"><div class="srow-l">No cobrado (brecha)</div><div class="srow-r red">${N(r.int_esperados-r.int_cobrados)}</div></div>
+    </div>`;
+
+  // Waterfall
+  destroyChart('waterfall');
+  const wlabels = ['Ingreso financiero','Costos totales','Resultado neto'];
+  const wdata   = [r.int_cobrados,-r.costos_estructura, r.resultado_neto];
+  const wcolors = wdata.map(v=>v>=0?'rgba(168,255,62,.6)':'rgba(255,61,90,.6)');
+  const wborders= wdata.map(v=>v>=0?'#a8ff3e':'#ff3d5a');
+  charts['waterfall'] = new Chart(document.getElementById('c_waterfall').getContext('2d'),{
+    type:'bar', data:{labels:wlabels,datasets:[{data:wdata,backgroundColor:wcolors,borderColor:wborders,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+(c.parsed.y/1e6).toFixed(2)+'M'}}},
+    scales:{x:{ticks:{...CTICK,maxRotation:20},grid:CGRID},y:{ticks:{...CTICK,callback:v=>'$'+(v/1e6).toFixed(1)+'M'},grid:CGRID}}}});
+
+  // Cuenta de resultados
+  const items_cr = [
+    {l:'📥 Ingresos (Ventas)',v:d.flujo.ventas_mes,pos:true},
+    {l:'💰 Intereses cobrados (40.4% × cartera × %cob)',v:r.int_cobrados,pos:true},
+    {l:'👥 Salarios',v:-d.flujo.salarios,pos:false},
+    {l:'⚙️ Gastos operativos',v:-d.flujo.operativos,pos:false},
+    {l:'🍽 Consumos',v:-d.flujo.consumos,pos:false},
+    {l:'💳 Pago pasivos',v:-d.flujo.pago_pasivos,pos:false},
+    {l:'☠️ Incobrables (4.5% ventas nuevas)',v:-r.incobrables,pos:false},
+  ];
+  let html_cr = '';
+  items_cr.forEach(it=>{
+    html_cr += `<div class="srow"><div class="srow-l">${it.l}</div><div class="srow-r ${it.pos?'lime':'red'}">${N(it.v)}</div></div>`;
+  });
+  html_cr += `<div class="srow highlight-${es_rentable?'g':'r'}" style="margin-top:8px;"><div class="srow-l" style="font-weight:700">RESULTADO NETO</div><div class="srow-r" style="color:${es_rentable?'var(--lime)':'var(--red)'};font-size:.9rem;">${N(r.resultado_neto)}</div></div>`;
+  document.getElementById('cuentaResultados').innerHTML = `<div class="c-lbl" style="margin-bottom:10px;">Cuenta de Resultados detallada</div>${html_cr}`;
+
+  // Costos % sobre ingresos
+  destroyChart('costos_pct');
+  const ingresos = d.flujo.ventas_mes;
+  charts['costos_pct'] = new Chart(document.getElementById('c_costos_pct').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['Salarios','Op.','Incobrables','Pasivos acreed.','Margen neto'],
+          datasets:[{data:[d.flujo.salarios,d.flujo.operativos,r.incobrables,d.flujo.pago_pasivos,Math.max(0,ingresos-d.flujo.salarios-d.flujo.operativos-r.incobrables-d.flujo.pago_pasivos)],
+          backgroundColor:['rgba(255,61,90,.6)','rgba(255,107,74,.5)','rgba(255,61,90,.8)','rgba(192,132,252,.5)','rgba(168,255,62,.6)'],
+          borderColor:'var(--ink)', borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:CLEG}}});
+}
+
+
+/* ══════════════════════════════════════════════
+   COBRANZA
+══════════════════════════════════════════════ */
+let COB_VEND = 'all';
+let KPIS_OP_VEND = 'all';
+
+function renderCobranza(d,s) {
+  // ── Botones de vendedor ──
+  const btnsEl = document.getElementById('cob-vend-btns');
+  if(btnsEl && !btnsEl.dataset.built) {
+    btnsEl.dataset.built = '1';
+    btnsEl.innerHTML = `<button class="fb-q active" data-cv="all" onclick="setCobVend('all')">GLOBAL</button>` +
+      d.zonas.map(z=>`<button class="fb-q" data-cv="${z.name}" onclick="setCobVend('${z.name}')" style="border-color:${z.color}33">${z.name}</button>`).join('');
+  }
+
+  // Fuente de datos según filtro
+  const zonaFiltrada = COB_VEND === 'all' ? null : d.zonas.find(z=>z.name===COB_VEND);
+  // Usar orden original del array — ya viene ordenado cronológicamente del Excel
+  // El sort por fecha causaba problemas con años mal cargados; la corrección se hace en parseCobranzaSheet
+  const rows = zonaFiltrada ? zonaFiltrada.rows : d.global;
+  const label     = zonaFiltrada ? zonaFiltrada.name : 'Global';
+  const lineColor = zonaFiltrada ? zonaFiltrada.color : '#a8ff3e';
+  const fillColor = zonaFiltrada ? zonaFiltrada.color + '15' : 'rgba(168,255,62,.07)';
+
+  if(!rows.length) return;
+  const n         = rows.length;
+  const avg_pct   = avg(rows.map(x=>x.pct));
+  const last_pct  = rows[n-1].pct;
+  const prev_pct  = n>1 ? rows[n-2].pct : last_pct;
+  const max_pct   = Math.max(...rows.map(x=>x.pct));
+  const min_pct   = Math.min(...rows.map(x=>x.pct));
+  const total_ac  = sum(rows.map(x=>x.ac));
+  const total_co  = sum(rows.map(x=>x.co));
+  const primer    = rows[0].sem;
+  const ultimo    = rows[n-1].sem;
+
+  document.getElementById('cob-sub-text').textContent =
+    `${label} · ${n} semanas · ${primer} → ${ultimo}`;
+
+  const delta = last_pct - prev_pct;
+  document.getElementById('kpis-cob').innerHTML = [
+    {l:`% prom ${label}`,   v:P(avg_pct),  cls:avg_pct>=.9?'lime':avg_pct>=.8?'sky':'amber', sub:'sobre período filtrado'},
+    {l:'Última semana',      v:P(last_pct), cls:last_pct>=.9?'lime':last_pct>=.8?'sky':'amber', sub:`${delta>=0?'↑':'↓'} ${P(Math.abs(delta))} vs sem ant.`},
+    {l:'Mejor semana',       v:P(max_pct),  cls:'lime', sub:'máximo del período'},
+    {l:'Peor semana',        v:P(min_pct),  cls:'red',  sub:'mínimo del período'},
+    {l:'Brecha período',     v:N(total_ac-total_co), cls:'red', sub:`${P(1-total_co/total_ac)} sin cobrar`},
+  ].map(k=>`<div class="card-xs ${k.cls==='lime'?'c-lime':k.cls==='red'?'c-red':k.cls==='sky'?'c-sky':'c-amber'}"><div class="c-lbl">${k.l}</div><div class="c-val ${k.cls}">${k.v}</div><div class="c-sub">${k.sub}</div></div>`).join('');
+
+  // Curva cobranza
+  destroyChart('cob_full');
+  // Filtrar valores anómalos para calcular yMin (excluir semanas con pct < 10% que son errores de datos)
+  const pcts_validos = rows.map(x => x.pct * 100).filter(p => p >= 10);
+  const min_pct_chart = pcts_validos.length ? Math.min(...pcts_validos) : min_pct * 100;
+  const yMin = Math.max(0, Math.floor(min_pct_chart / 10) * 10 - 10);
+  charts['cob_full'] = new Chart(document.getElementById('c_cob_full').getContext('2d'),{
+    type:'line',
+    data:{labels:rows.map(x=>x.sem), datasets:[
+      {label:`% Cob ${label}`,
+       data:rows.map(x => x.pct < 0.10 ? null : +(x.pct*100).toFixed(2)),
+        borderColor:lineColor, backgroundColor:fillColor, fill:true, tension:0, pointRadius:3, borderWidth:2, spanGaps:false},
+      {label:'Meta 85%',   data:rows.map(()=>85), borderColor:'rgba(255,176,56,.5)', segment:{borderDash:()=>[5,5]}, pointRadius:0, borderWidth:1.5, fill:false},
+      {label:'Crítico 70%',data:rows.map(()=>70), borderColor:'rgba(255,61,90,.4)',  segment:{borderDash:()=>[3,3]}, pointRadius:0, borderWidth:1,   fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:CLEG,tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y??'—')+'%'}}},
+      scales:{x:{ticks:{...CTICK,maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:CGRID},
+              y:{min:yMin, max:115, ticks:{...CTICK,callback:v=>v+'%'},grid:CGRID}}}});
+
+  // A cobrar vs cobrado por mes — agrupar con fecha ISO para evitar colisiones entre años
+  const mmap = {}, mmapOrder = [];
+  const meses_es_cob = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  // Construir mapa sem→fecha desde el global completo (fallback para zonas sin fecha propia)
+  const semToFechaCob = {};
+  DATA.global.forEach(r => { if(r.fecha) semToFechaCob[r.sem] = r.fecha; });
+  rows.forEach(x => {
+    const fStr = x.fecha || semToFechaCob[x.sem];
+    let mk, mlbl;
+    if(fStr) {
+      const dt = new Date(fStr);
+      mk   = dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0');
+      mlbl = meses_es_cob[dt.getUTCMonth()] + ' \'' + String(dt.getUTCFullYear()).slice(2);
+    } else {
+      // fallback sin fecha: usar "MM" del sem (puede colisionar entre años, pero es lo mejor disponible)
+      mk   = x.sem.slice(3);
+      mlbl = mk;
+    }
+    if(!mmap[mk]) { mmap[mk] = {ac:0, co:0, lbl:mlbl}; mmapOrder.push(mk); }
+    mmap[mk].ac += x.ac;
+    mmap[mk].co += x.co;
+  });
+  const mmapVals = mmapOrder.map(k => mmap[k]);
+  destroyChart('mensual');
+  charts['mensual'] = new Chart(document.getElementById('c_mensual').getContext('2d'),{
+    type:'bar',
+    data:{labels:mmapVals.map(x=>x.lbl),datasets:[
+      {label:'A Cobrar',data:mmapVals.map(x=>+(x.ac/1e6).toFixed(2)),backgroundColor:'rgba(56,182,255,.3)',borderColor:'#38b6ff',borderWidth:1,borderRadius:3},
+      {label:'Cobrado', data:mmapVals.map(x=>+(x.co/1e6).toFixed(2)),backgroundColor:lineColor+'66',borderColor:lineColor,borderWidth:1,borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:CLEG,tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'M'}}},
+      scales:{x:{ticks:CTICK,grid:CGRID},y:{ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}}});
+
+  // Histograma
+  const buckets=[20,50,60,65,70,75,80,85,90,95,101];
+  const counts=Array(buckets.length-1).fill(0);
+  rows.forEach(x=>{const p=x.pct*100;for(let i=0;i<buckets.length-1;i++){if(p>=buckets[i]&&p<buckets[i+1]){counts[i]++;break;}}});
+  destroyChart('histograma');
+  charts['histograma'] = new Chart(document.getElementById('c_histograma').getContext('2d'),{
+    type:'bar',
+    data:{labels:buckets.slice(0,-1).map((b,i)=>`${b}–${buckets[i+1]}%`),
+          datasets:[{data:counts,backgroundColor:buckets.slice(0,-1).map(b=>b>=90?'rgba(168,255,62,.6)':b>=80?'rgba(56,182,255,.5)':b>=70?'rgba(255,176,56,.5)':'rgba(255,61,90,.6)'),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{...CTICK,maxRotation:30},grid:CGRID},y:{ticks:{...CTICK,stepSize:1},grid:CGRID}}}});
+
+  // Tabla cobranza
+  const tbody = document.getElementById('tbl-cob');
+  tbody.innerHTML = '';
+  const pct0 = rows[0].pct; // % cobranza semana 1 del período
+  const co0  = rows[0].co;  // cobrado semana 1 del período
+  rows.forEach((x,i)=>{
+    const prev  = i>0 ? rows[i-1].pct : x.pct;
+    const delta = x.pct - prev;
+    const dstr  = i===0 ? '—' : (delta>=0
+      ? `<span class="lime">↑${P(delta)}</span>`
+      : `<span class="red">↓${P(Math.abs(delta))}</span>`);
+
+    // Crecimiento acumulado de cobranza ($) desde semana 1 del período
+    const crecCo  = co0 > 0 ? (x.co - co0) / co0 : 0;
+    const crecPct = x.pct - pct0; // diferencia de puntos porcentuales en cobranza
+    const crecCoStr = i===0 ? '—' : (crecCo>=0
+      ? `<span class="lime">↑${(crecCo*100).toFixed(1)}%</span>`
+      : `<span class="red">↓${(Math.abs(crecCo)*100).toFixed(1)}%</span>`);
+    const crecPctStr = i===0 ? '' : (crecPct>=0
+      ? `<span style="font-size:.6rem;color:var(--frost3)"> ${crecPct>=0?'+':''}${(crecPct*100).toFixed(1)}pp</span>`
+      : `<span style="font-size:.6rem;color:var(--frost3)"> ${(crecPct*100).toFixed(1)}pp</span>`);
+
+    tbody.innerHTML += `<tr>
+      <td class="mono muted">${i+1}</td>
+      <td class="mono">${x.sem}</td>
+      <td class="mono">${M(x.ac)}</td>
+      <td class="mono lime">${M(x.co)}</td>
+      <td class="mono red">${M(x.ac-x.co)}</td>
+      <td class="mono" style="color:${pctColor(x.pct)}">${P(x.pct)}</td>
+      <td class="mono">${M(x.v)}</td>
+      <td>${dstr}</td>
+      <td class="mono">${crecCoStr}${crecPctStr}</td>
+      <td><span class="pill ${pctPill(x.pct)}">${pctLabel(x.pct)}</span></td>
+    </tr>`;
+  });
+}
+
+function setCobVend(name) {
+  COB_VEND = name;
+  document.querySelectorAll('#cob-vend-btns .fb-q').forEach(b=>{
+    b.classList.toggle('active', b.dataset.cv === name);
+  });
+  const fd = getFilteredData();
+  renderCobranza(fd, fd.stats);
+  renderComparacionMensual(fd, fd.stats);
+}
+
+function setKpisOpVend(name) {
+  KPIS_OP_VEND = name;
+  document.querySelectorAll('#kpis-op-vend-btns .fb-q').forEach(b=>{
+    b.classList.toggle('active', b.dataset.kv === name);
+  });
+  const fd = getFilteredData();
+  renderKpisOp(fd, fd.stats);
+}
+
+/* ══════════════════════════════════════════════
+   VENDEDORES
+══════════════════════════════════════════════ */
+function renderVendedores(d,s) {
+  const TASA = 0.40;
+  const costos_tot = d.costos.total;
+
+  // Calcular total_ventas_all SOLO sobre datos filtrados
+  const total_ventas_all = d.zonas.reduce((a,z) => a + sum(z.rows.map(x=>x.v)), 0);
+
+  const zonaStats = d.zonas.map(z => {
+    const rows = z.rows;
+    if(!rows.length) return null;
+    const n = rows.length;
+
+    const tc  = sum(rows.map(x=>x.co));
+    const tv  = sum(rows.map(x=>x.v));
+    const tac = sum(rows.map(x=>x.ac));
+    const pct_cob    = tac > 0 ? tc / tac : 0;
+    const v_sem_avg  = n > 0 ? tv / n : 0;
+
+    const last4  = rows.slice(-4);
+    const v_mes  = sum(last4.map(x=>x.v));
+    const co_mes = sum(last4.map(x=>x.co));
+    const ac_mes = sum(last4.map(x=>x.ac));
+    const pct_mes = ac_mes > 0 ? co_mes / ac_mes : 0;
+
+    const pct_cartera = total_ventas_all > 0 ? tv / total_ventas_all : 0;
+
+    const costos_periodo = costos_tot * pct_cartera * (n / 4);
+    const ing_periodo    = tv * TASA * pct_cob;
+    const resultado_zona = ing_periodo - costos_periodo;
+    const roi_zona       = tv > 0 ? resultado_zona / tv : 0;
+
+    const brecha     = tac - tc;
+    const incobr_pct = tac > 0 ? brecha / tac : 0;
+    const rotacion   = tac > 0 ? tc / tac : 0;
+
+    const mid = Math.floor(n / 2);
+    const trend = n >= 4
+      ? avg(rows.slice(mid).map(x=>x.pct)) - avg(rows.slice(0, mid).map(x=>x.pct))
+      : 0;
+
+    return {
+      z, tc, tv, tac, pct_cob, v_mes, co_mes, ac_mes, pct_mes,
+      v_sem_avg, pct_cartera, ing_periodo, costos_periodo,
+      resultado_zona, roi_zona, incobr_pct, rotacion, trend, brecha, n,
+      rows, // guardar rows filtrados para gráficos
+    };
+  }).filter(Boolean);
+
+  // Guard: sin datos de zona en este período
+  if(!zonaStats.length) {
+    const noDataMsg = `<div style="padding:32px;text-align:center;font-family:var(--fm);font-size:.75rem;color:var(--frost3);">
+      Sin datos de vendedores para el período seleccionado.<br>
+      <span style="color:var(--amber)">Los datos de zonas disponibles cubren hasta ${DATA.zonas[0]?.rows.slice(-1)[0]?.sem || '—'}</span>
+    </div>`;
+    ['vend-ranking','tbody-vend','bar-cobranza-z','bar-rotacion-z','vend-detail'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.innerHTML = noDataMsg;
+    });
+    ['vend_mapa','vend_cartera_pie','vend_lines'].forEach(id=>destroyChart(id));
+    return;
+  }
+
+  // ── Score absoluto sobre período filtrado ──
+  const COB_META = 0.90; const COB_CRIT = 0.50;
+  const VOL_SEM  = 5e6;
+  const ROI_OBJ  = 0.10;
+  const INCOB_OK = 0.08; const INCOB_MAX = 0.30;
+
+  zonaStats.forEach(z => {
+    const sCob   = Math.min(100, Math.max(0, ((z.pct_cob - COB_CRIT) / (COB_META - COB_CRIT)) * 100));
+    const sVol   = Math.min(100, (z.v_sem_avg / VOL_SEM) * 100);
+    const sRoi   = Math.min(100, Math.max(0, (z.roi_zona / ROI_OBJ) * 100));
+    const sIncob = z.incobr_pct <= INCOB_OK
+      ? 100
+      : Math.max(0, ((INCOB_MAX - z.incobr_pct) / (INCOB_MAX - INCOB_OK)) * 100);
+    z.score = Math.round(sCob*0.40 + sVol*0.25 + sRoi*0.20 + sIncob*0.15);
+    z.scoreDetail = { sCob: Math.round(sCob), sVol: Math.round(sVol), sRoi: Math.round(sRoi), sIncob: Math.round(sIncob) };
+  });
+
+  const ranked = [...zonaStats].sort((a,b) => b.score - a.score);
+  const medals = ['🥇','🥈','🥉','4°','5°'];
+
+  // ── RANKING ──
+  const leyenda = `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;background:var(--ink3);border-radius:8px;border:1px solid var(--line);">
+    <span style="font-family:var(--fm);font-size:.6rem;color:var(--frost3);">UMBRALES:</span>
+    <span style="font-family:var(--fm);font-size:.6rem;color:var(--lime);">COB meta 90%</span>
+    <span style="font-family:var(--fm);font-size:.6rem;color:var(--sky);">VOL obj $5M/sem</span>
+    <span style="font-family:var(--fm);font-size:.6rem;color:var(--violet);">ROI obj 10% s/ventas</span>
+    <span style="font-family:var(--fm);font-size:.6rem;color:var(--amber);">INCOB sano ≤8%</span>
+    <span style="font-family:var(--fm);font-size:.6rem;color:var(--frost3);">· Score sobre período filtrado</span>
+  </div>`;
+
+  document.getElementById('vend-ranking').innerHTML = leyenda + ranked.map((z,i) => {
+    const bar = z.score;
+    const barColor = bar >= 70 ? 'var(--lime)' : bar >= 50 ? 'var(--amber)' : 'var(--red)';
+    const sd = z.scoreDetail;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);${i===ranked.length-1?'border-bottom:none':''}">
+      <div style="font-size:1.2rem;width:28px;text-align:center">${medals[i]}</div>
+      <div style="width:7px;height:7px;border-radius:50%;background:${z.z.color};flex-shrink:0"></div>
+      <div style="font-weight:700;font-size:.85rem;color:${z.z.color};width:80px">${z.z.name}</div>
+      <div style="flex:1;">
+        <div style="background:var(--ink3);border-radius:4px;height:8px;overflow:hidden;margin-bottom:4px;">
+          <div style="width:${bar}%;height:100%;background:${barColor};border-radius:4px;transition:width .6s"></div>
+        </div>
+        <div style="font-family:var(--fm);font-size:.58rem;color:var(--frost3);">COB ${sd.sCob} · VOL ${sd.sVol} · ROI ${sd.sRoi} · INCOB ${sd.sIncob}</div>
+      </div>
+      <div style="font-weight:900;font-size:1rem;color:${barColor};width:42px;text-align:right">${bar}</div>
+      <div style="font-size:.72rem;color:var(--frost3);width:140px;text-align:right">cob ${P(z.pct_cob)} · ${z.n} sem</div>
+    </div>`;
+  }).join('');
+
+  // ── MAPA ESTRATÉGICO — usa datos filtrados ──
+  destroyChart('vend_mapa');
+  charts['vend_mapa'] = new Chart(document.getElementById('c_vend_mapa').getContext('2d'), {
+    type: 'scatter',
+    data: { datasets: zonaStats.map(z => ({
+      label: z.z.name,
+      data: [{ x: +(z.v_sem_avg/1e6).toFixed(2), y: +(z.pct_cob*100).toFixed(1) }],
+      backgroundColor: z.z.color + 'bb', borderColor: z.z.color,
+      pointRadius: 14, pointHoverRadius: 16,
+    }))},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: CLEG, tooltip: { callbacks: { label: c => `${c.dataset.label}: $${c.parsed.x}M/sem · ${c.parsed.y}% cob` }}},
+      scales: {
+        x: { title:{ display:true, text:'Ventas prom/sem ($M)', color:'var(--frost3)', font:{size:10} }, ticks:{...CTICK,callback:v=>'$'+v+'M'}, grid:CGRID },
+        y: { title:{ display:true, text:'% Cobranza', color:'var(--frost3)', font:{size:10} }, min:30, ticks:{...CTICK,callback:v=>v+'%'}, grid:CGRID }
+      }
+    }
+  });
+
+  // ── PIE CARTERA — datos filtrados ──
+  destroyChart('vend_cartera_pie');
+  charts['vend_cartera_pie'] = new Chart(document.getElementById('c_vend_cartera_pie').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: zonaStats.map(z=>z.z.name),
+      datasets:[{ data: zonaStats.map(z=>z.tv), backgroundColor: zonaStats.map(z=>z.z.color+'bb'), borderColor:'var(--ink)', borderWidth:2 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'55%',
+      plugins:{ legend:CLEG, tooltip:{ callbacks:{ label:c=>`${c.label}: ${M(c.raw)} (${(c.raw/total_ventas_all*100).toFixed(1)}%)`}}}}
+  });
+
+  // ── TABLA COMPARATIVA ──
+  document.getElementById('tbody-vend').innerHTML = ranked.map((z,i) => {
+    const cRoi   = z.roi_zona > 0.10 ? 'lime' : z.roi_zona > 0 ? 'amber' : 'red';
+    const cIncob = z.incobr_pct < 0.08 ? 'lime' : z.incobr_pct < 0.15 ? 'amber' : 'red';
+    const cCob   = z.pct_cob > 0.85 ? 'lime' : z.pct_cob > 0.75 ? 'amber' : 'red';
+    const concentr = z.pct_cartera > 0.40 ? ' style="color:var(--red)"' : z.pct_cartera > 0.30 ? ' style="color:var(--amber)"' : '';
+    return `<tr>
+      <td><span style="color:${z.z.color};font-weight:700">${medals[i]} ${z.z.name}</span></td>
+      <td${concentr}>${P(z.pct_cartera)}${z.pct_cartera>0.40?' ⚠':''}</td>
+      <td class="${cCob}">${P(z.pct_cob)}</td>
+      <td class="${cRoi}">${P(z.roi_zona)}</td>
+      <td class="${cIncob}">${P(z.incobr_pct)}</td>
+      <td>${P(z.rotacion)}</td>
+      <td><span style="font-weight:900;color:${z.z.color}">${z.score}</span></td>
+    </tr>`;
+  }).join('');
+
+  // ── BARRAS COBRANZA — datos filtrados ──
+  const maxCobPct = Math.max(...zonaStats.map(z=>z.pct_cob));
+  document.getElementById('bar-cobranza-z').innerHTML = ranked.map(z => {
+    const cl = z.pct_cob > 0.85 ? 'var(--lime)' : z.pct_cob > 0.75 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="brow"><div class="bname" style="color:${z.z.color}">${z.z.name}</div><div class="btrack"><div class="bfill" style="width:${(z.pct_cob/maxCobPct*100).toFixed(0)}%;background:${cl}"></div></div><div class="bval" style="color:${cl}">${P(z.pct_cob)}</div></div>`;
+  }).join('');
+
+  // ── BARRAS ROTACIÓN ──
+  const maxRot = Math.max(...zonaStats.map(z=>z.rotacion));
+  document.getElementById('bar-rotacion-z').innerHTML = ranked.map(z => {
+    return `<div class="brow"><div class="bname" style="color:${z.z.color}">${z.z.name}</div><div class="btrack"><div class="bfill" style="width:${(z.rotacion/maxRot*100).toFixed(0)}%;background:${z.z.color}"></div></div><div class="bval">${P(z.rotacion)}</div></div>`;
+  }).join('');
+
+  // ── LÍNEAS EVOLUCIÓN — usa rows filtrados de zonaStats ──
+  // Usar el orden del global filtrado como referencia canónica de fechas
+  const globalSems = d.global.map(r => r.sem);
+  const zoneSems = new Set(zonaStats.flatMap(z=>z.rows.map(x=>x.sem)));
+  // Primero las sems que están en el global (orden cronológico garantizado)
+  // Luego las que solo están en zonas (orden de inserción)
+  const semsEnGlobal = globalSems.filter(s => zoneSems.has(s));
+  const semsExtraZona = [...zoneSems].filter(s => !globalSems.includes(s));
+  const allSems = [...semsEnGlobal, ...semsExtraZona];
+  destroyChart('vend_lines');
+  charts['vend_lines'] = new Chart(document.getElementById('c_vend_lines').getContext('2d'), {
+    type: 'line',
+    data: { labels: allSems, datasets: zonaStats.map(z => {
+      // Map a dict sem→pct para alinear con allSems
+      const semMap = {};
+      z.rows.forEach(r => { semMap[r.sem] = +(r.pct*100).toFixed(1); });
+      return {
+        label: z.z.name,
+    data: allSems.map(s => {
+          const v = semMap[s];
+          return (v !== undefined && v >= 10) ? v : null;
+        }),
+        borderColor: z.z.color, backgroundColor: 'transparent',
+        tension: 0, pointRadius: 2, borderWidth: 1.5,
+        spanGaps: false,
+      };
+    })},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:CLEG, tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'%'}}},
+      scales:{x:{ticks:{...CTICK,maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:CGRID},
+              y:{min:25,max:115,ticks:{...CTICK,callback:v=>v+'%'},grid:CGRID}}}
+  });
+
+  // ── CARDS DETALLE ──
+  const detEl = document.getElementById('vend-detail');
+  detEl.innerHTML = '';
+  ranked.forEach((zs,i) => {
+    const z = zs.z;
+    detEl.innerHTML += `<div class="vcard">
+      <div class="vcard-header">
+        <div class="vcard-dot" style="background:${z.color}"></div>
+        <div class="vcard-name" style="color:${z.color}">${medals[i]} ${z.name}</div>
+        <span class="pill ${pctPill(zs.pct_cob)}" style="margin-left:auto">${pctLabel(zs.pct_cob)}</span>
+        <span class="trend ${zs.trend>0.02?'up':zs.trend<-0.02?'down':'flat'}" style="margin-left:8px">${zs.trend>0.02?'↑ Mejorando':zs.trend<-0.02?'↓ Deteriorando':'→ Estable'}</span>
+      </div>
+      <div class="vcard-grid">
+        <div class="vkpi"><div class="vkpi-l">Cob. promedio período</div><div class="vkpi-v" style="color:${z.color}">${P(zs.pct_cob)}</div></div>
+        <div class="vkpi"><div class="vkpi-l">% Cartera período</div><div class="vkpi-v ${zs.pct_cartera>0.40?'red':zs.pct_cartera>0.30?'amber':'lime'}">${P(zs.pct_cartera)}</div></div>
+        <div class="vkpi"><div class="vkpi-l">ROI zona</div><div class="vkpi-v ${zs.roi_zona>0.10?'lime':zs.roi_zona>0?'amber':'red'}">${P(zs.roi_zona)}</div></div>
+        <div class="vkpi"><div class="vkpi-l">Incobrables est.</div><div class="vkpi-v ${zs.incobr_pct<0.08?'lime':zs.incobr_pct<0.15?'amber':'red'}">${P(zs.incobr_pct)}</div></div>
+        <div class="vkpi"><div class="vkpi-l">Semanas en período</div><div class="vkpi-v">${zs.n}</div></div>
+        <div class="vkpi"><div class="vkpi-l">Score</div><div class="vkpi-v" style="color:${z.color};font-size:1.3rem">${zs.score}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:.75rem;margin-top:2px;">
+        <div style="background:var(--ink3);border-radius:8px;padding:8px;"><span class="muted">Brecha período</span><br><span class="mono red">${M(zs.brecha)}</span></div>
+        <div style="background:var(--ink3);border-radius:8px;padding:8px;"><span class="muted">Ventas período</span><br><span class="mono">${M(zs.tv)}</span></div>
+        <div style="background:var(--ink3);border-radius:8px;padding:8px;"><span class="muted">Prom/sem</span><br><span class="mono sky">${M(zs.v_sem_avg)}</span></div>
+      </div>
+      <div class="vbar-wrap" style="margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:.65rem;color:var(--frost3);margin-bottom:3px;"><span>Score período</span><span style="color:${z.color}">${zs.score}/100</span></div>
+        <div class="vbar-bg"><div class="vbar-fill" style="width:${zs.score}%;background:${z.color}"></div></div>
+      </div>
+    </div>`;
+  });
+}
+
+/* ══════════════════════════════════════════════
+   KPIs OPERATIVOS — estado de selección inicio/actual
+══════════════════════════════════════════════ */
+let KPIS_OP_INICIO_TIPO = 'sem'; // 'sem' | 'mes'
+let KPIS_OP_ACTUAL_TIPO = 'sem';
+let KPIS_OP_INICIO_IDX  = 0;    // índice en el array de opciones
+let KPIS_OP_ACTUAL_IDX  = -1;   // -1 = último
+
+function setKpisOpTipo(campo, tipo) {
+  if(campo === 'inicio') KPIS_OP_INICIO_TIPO = tipo;
+  else                   KPIS_OP_ACTUAL_TIPO = tipo;
+  // Actualizar botones activos
+  const grpId = campo === 'inicio' ? 'kpis-op-inicio-tipo' : 'kpis-op-actual-tipo';
+  document.querySelectorAll(`#${grpId} .fb-q`).forEach(b =>
+    b.classList.toggle('active', b.dataset.tipo === tipo));
+  renderKpisOpFromState();
+}
+
+function renderKpisOpFromState() {
+  if(!DATA) return;
+  const fd = getFilteredData();
+  renderKpisOp(fd, fd.stats);
+}
+
+// Construye las opciones del selector según tipo (sem/mes) y rows disponibles
+function buildKpisOpOptions(rows, tipo, selId, defaultLast) {
+  const sel = document.getElementById(selId);
+  if(!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  if(tipo === 'sem') {
+    rows.forEach((r, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = r.sem + (r.fecha ? ' (' + r.fecha.slice(0,7) + ')' : '');
+      sel.appendChild(opt);
+    });
+    sel.value = prev !== '' && prev < rows.length ? prev : (defaultLast ? rows.length - 1 : 0);
+  } else {
+    // Agrupar por mes con fecha ISO
+    const meses_es = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const grupos = {}, orden = [];
+    rows.forEach((r, i) => {
+      if(!r.fecha) return;
+      const dt  = new Date(r.fecha);
+      const key = dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0');
+      if(!grupos[key]) { grupos[key] = { label: meses_es[dt.getUTCMonth()] + ' \'' + String(dt.getUTCFullYear()).slice(2), indices:[] }; orden.push(key); }
+      grupos[key].indices.push(i);
+    });
+    orden.forEach((k, mi) => {
+      const opt = document.createElement('option');
+      opt.value = mi; // index into orden array
+      opt.dataset.key = k;
+      opt.textContent = grupos[k].label;
+      sel.appendChild(opt);
+    });
+    // Store grupos on sel for later retrieval
+    sel._grupos = grupos;
+    sel._orden  = orden;
+    sel._rows   = rows;
+    sel.value = prev !== '' && prev < orden.length ? prev : (defaultLast ? orden.length - 1 : 0);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   KPIs OPERATIVOS — Inicio vs Actual
+══════════════════════════════════════════════ */
+function renderKpisOp(d, s) {
+  const el = document.getElementById('kpis-op-container');
+  if(!el) return;
+
+  // ── Botones de vendedor ──
+  const btnsEl = document.getElementById('kpis-op-vend-btns');
+  if(btnsEl && !btnsEl.dataset.built) {
+    btnsEl.dataset.built = '1';
+    btnsEl.innerHTML = `<button class="fb-q active" data-kv="all" onclick="setKpisOpVend('all')">GLOBAL</button>` +
+      d.zonas.map(z=>`<button class="fb-q" data-kv="${z.name}" onclick="setKpisOpVend('${z.name}')" style="border-color:${z.color}33">${z.name}</button>`).join('');
+  }
+
+  // Fuente de datos según filtro vendedor
+  const zonaFiltrada = KPIS_OP_VEND === 'all' ? null : d.zonas.find(z=>z.name===KPIS_OP_VEND);
+  const rows      = zonaFiltrada ? zonaFiltrada.rows : d.global;
+  const label     = zonaFiltrada ? zonaFiltrada.name : 'Global';
+  const lineColor = zonaFiltrada ? zonaFiltrada.color : '#a8ff3e';
+
+  if(!rows || rows.length < 2) { el.innerHTML = '<div style="padding:32px;text-align:center;color:var(--frost3);font-family:var(--fm);font-size:.75rem;">Sin datos suficientes para calcular KPIs operativos.</div>'; return; }
+
+  // ── Poblar selectores Inicio / Actual ──
+  buildKpisOpOptions(rows, KPIS_OP_INICIO_TIPO, 'kpis-op-inicio-sel', false);
+  buildKpisOpOptions(rows, KPIS_OP_ACTUAL_TIPO,  'kpis-op-actual-sel', true);
+
+  // ── Leer punto de inicio ──
+  let r0, r0label;
+  const iniSel = document.getElementById('kpis-op-inicio-sel');
+  if(KPIS_OP_INICIO_TIPO === 'sem') {
+    const idx = parseInt(iniSel.value) || 0;
+    r0 = rows[Math.min(idx, rows.length-1)];
+    r0label = r0.sem;
+  } else {
+    const mi  = parseInt(iniSel.value) || 0;
+    const key = iniSel._orden?.[mi];
+    const grp = iniSel._grupos?.[key];
+    if(!grp) { r0 = rows[0]; r0label = rows[0].sem; }
+    else {
+      // Mes: agregar las semanas de ese mes
+      const mesRows = grp.indices.map(i => rows[i]);
+      const ac = mesRows.reduce((a,x)=>a+x.ac,0);
+      const co = mesRows.reduce((a,x)=>a+x.co,0);
+      const v  = mesRows.reduce((a,x)=>a+x.v, 0);
+      r0 = { pct: ac>0?co/ac:0, co, ac, v, _mes: true };
+      r0label = iniSel._grupos[key].label;
+    }
+  }
+
+  // ── Leer punto actual ──
+  let rN, rNlabel;
+  const actSel = document.getElementById('kpis-op-actual-sel');
+  if(KPIS_OP_ACTUAL_TIPO === 'sem') {
+    const idx = parseInt(actSel.value);
+    const realIdx = (isNaN(idx) || idx < 0) ? rows.length-1 : Math.min(idx, rows.length-1);
+    rN = rows[realIdx];
+    rNlabel = rN.sem;
+  } else {
+    const mi  = parseInt(actSel.value);
+    const realMi = (isNaN(mi) || mi < 0) ? (actSel._orden?.length-1 || 0) : mi;
+    const key = actSel._orden?.[realMi];
+    const grp = actSel._grupos?.[key];
+    if(!grp) { rN = rows[rows.length-1]; rNlabel = rN.sem; }
+    else {
+      const mesRows = grp.indices.map(i => rows[i]);
+      const ac = mesRows.reduce((a,x)=>a+x.ac,0);
+      const co = mesRows.reduce((a,x)=>a+x.co,0);
+      const v  = mesRows.reduce((a,x)=>a+x.v, 0);
+      rN = { pct: ac>0?co/ac:0, co, ac, v, _mes: true };
+      rNlabel = actSel._grupos[key].label;
+    }
+  }
+
+  // Update sub
+  const subEl = document.getElementById('kpis-op-sub');
+  if(subEl) subEl.textContent = `${label} · ${r0label} → ${rNlabel}`;
+
+  const n  = rows.length;
+
+  // ── Ventana de tendencia: último tramo vs primer tramo (mitad/mitad) ──
+  const mid  = Math.max(1, Math.floor(n / 2));
+  const tramo1 = rows.slice(0, mid);
+  const tramo2 = rows.slice(mid);
+
+  // Helpers
+  const avgPct  = arr => arr.reduce((a,x)=>a+x.pct,0)/arr.length;
+  const sumV    = arr => arr.reduce((a,x)=>a+x.v,0);
+  const sumCo   = arr => arr.reduce((a,x)=>a+x.co,0);
+  const sumAc   = arr => arr.reduce((a,x)=>a+x.ac,0);
+  const stdDev  = arr => { const m=arr.reduce((a,b)=>a+b,0)/arr.length; return Math.sqrt(arr.reduce((a,x)=>a+(x-m)**2,0)/arr.length); };
+  const fmtPP   = v => (v>=0?'+':'')+( v*100).toFixed(1)+'pp';
+  const fmtPct  = v => (v>=0?'+':'')+( v*100).toFixed(1)+'%';
+  const fmtM_d  = v => (v>=0?'+':'')+( v/1e6).toFixed(1)+'M';
+  const fmtX    = (v,d=2) => (v>=0?'+':'')+v.toFixed(d)+'x';
+  const clsDir  = (v, positivo=true) => v === 0 ? 'amber' : ((v > 0) === positivo ? 'lime' : 'red');
+
+  // ── 1. COBRANZA % ──
+  const cob0   = r0.pct;
+  const cobN   = rN.pct;
+  const cobDlt = cobN - cob0;
+  const cobPct = cob0 > 0 ? cobDlt / cob0 : 0;
+
+  // ── 2. A COBRAR $ ──
+  const ac0   = r0.ac;
+  const acN   = rN.ac;
+  const acDlt = acN - ac0;
+  const acPct = ac0 > 0 ? acDlt / ac0 : 0;
+
+  // ── 3. COBRADO $ ──
+  const co0   = r0.co;
+  const coN   = rN.co;
+  const coDlt = coN - co0;
+  const coPct = co0 > 0 ? coDlt / co0 : 0;
+
+  // ── Totales acumulados del período completo ──
+  const total_ac  = rows.reduce((a,x)=>a+x.ac, 0);
+  const total_co  = rows.reduce((a,x)=>a+x.co, 0);
+  const total_v   = rows.reduce((a,x)=>a+x.v,  0);
+  const pct_acum  = total_ac > 0 ? total_co / total_ac : 0;
+  const brecha    = total_ac - total_co;
+
+  // ── 4. VENTAS $ ──
+  const v0   = r0.v;
+  const vN   = rN.v;
+  const vDlt = vN - v0;
+  const vPct = v0 > 0 ? vDlt / v0 : 0;
+
+  // ── 4. ROTACIÓN (Cobrado / Ventas) ──
+  // Usar promedio del período para estabilidad
+  const rot0 = r0.v > 0 ? r0.co / r0.v : 0;
+  const rotN = rN.v > 0 ? rN.co / rN.v : 0;
+  const rotDlt = rotN - rot0;
+  const rotPct = rot0 > 0 ? rotDlt / rot0 : 0;
+
+  // ── 5. CARTERA PENDIENTE (A cobrar - Cobrado) ──
+  const pend0   = r0.ac - r0.co;
+  const pendN   = rN.ac - rN.co;
+  const pendDlt = pendN - pend0;
+  const pendPct = pend0 > 0 ? pendDlt / pend0 : 0;
+
+  // ── 6. EFICIENCIA DE COBRANZA — descomposición ──
+  // Cobrado = Ventas × (Co/V)
+  // Δcobrado = ΔVentas×rot0 + Δrot×vN  (aproximación)
+  const impactoVol = vDlt * rot0;
+  const impactoEfic = rotDlt * vN;
+
+  // ── 7. VOLATILIDAD (stdDev cobranza %) ──
+  const vol1 = stdDev(tramo1.map(x=>x.pct));
+  const vol2 = stdDev(tramo2.map(x=>x.pct));
+  const volDlt = vol2 - vol1;
+
+  // ── 8. PICO vs ACTUAL ──
+  const maxPct  = Math.max(...rows.map(x=>x.pct));
+  const maxSem  = rows.find(x=>x.pct===maxPct)?.sem || '—';
+  const desdePico = cobN - maxPct;
+  const esMaximo  = Math.abs(desdePico) < 0.001;
+
+  // ── 9. ACELERACIÓN ──
+  // Tasa promedio de cambio semanal en % cobranza por tramo
+  const acel1 = tramo1.length > 1
+    ? (tramo1[tramo1.length-1].pct - tramo1[0].pct) / (tramo1.length - 1)
+    : 0;
+  const acel2 = tramo2.length > 1
+    ? (tramo2[tramo2.length-1].pct - tramo2[0].pct) / (tramo2.length - 1)
+    : 0;
+  const acelDlt = acel2 - acel1;
+  const acelPct = Math.abs(acel1) > 0.001 ? acelDlt / Math.abs(acel1) : 0;
+
+  // ── 10. PRODUCTIVIDAD por vendedor ──
+  // En global: promedio por vendedor activo
+  // En zona: comparar vs promedio del global en ese mismo período
+  const nVend = d.zonas.filter(z=>z.rows.length).length || 1;
+  let prod0, prodN, prodDlt, prodPct;
+  if(!zonaFiltrada) {
+    prod0   = v0 / nVend;
+    prodN   = vN / nVend;
+  } else {
+    // Promedio global en esa semana
+    const gRow0 = d.global[0];
+    const gRowN = d.global[d.global.length-1];
+    prod0 = gRow0 ? gRow0.v / nVend : v0;
+    prodN = gRowN ? gRowN.v / nVend : vN;
+  }
+  prodDlt = prodN - prod0;
+  prodPct = prod0 > 0 ? prodDlt / prod0 : 0;
+
+  // ── Renderizado ──
+  const kpiCard = (ico, titulo, color, inicio, actual, deltaAbs, deltaPct, sub, nota, positivo=true) => {
+    const dirCls = deltaAbs === 0 ? 'var(--amber)' : ((deltaAbs > 0) === positivo ? 'var(--lime)' : 'var(--red)');
+    const arrow  = deltaAbs === 0 ? '→' : deltaAbs > 0 ? '↑' : '↓';
+    return `<div class="kpi-op-card" style="border-left:3px solid ${color}">
+      <div class="kpi-op-head">
+        <span class="kpi-op-ico">${ico}</span>
+        <span class="kpi-op-title">${titulo}</span>
+      </div>
+      <div class="kpi-op-body">
+        <div class="kpi-op-col">
+          <div class="kpi-op-lbl">Inicio</div>
+          <div class="kpi-op-val" style="color:var(--frost2)">${inicio}</div>
+        </div>
+        <div class="kpi-op-arrow" style="color:${dirCls}">${arrow}</div>
+        <div class="kpi-op-col">
+          <div class="kpi-op-lbl">Actual</div>
+          <div class="kpi-op-val" style="color:${color}">${actual}</div>
+        </div>
+        <div class="kpi-op-delta" style="color:${dirCls}">
+          <div class="kpi-op-d1">${deltaAbs}</div>
+          <div class="kpi-op-d2">${deltaPct}</div>
+        </div>
+      </div>
+      <div class="kpi-op-sub">${sub}</div>
+      ${nota ? `<div class="kpi-op-nota">${nota}</div>` : ''}
+    </div>`;
+  };
+
+  const tipoLabel = KPIS_OP_INICIO_TIPO === 'mes' || KPIS_OP_ACTUAL_TIPO === 'mes' ? 'del período/mes' : 'de la semana';
+
+  el.innerHTML = `
+  <div class="divider" style="margin-top:0;">Evolución Inicio → Actual</div>
+
+  <div class="kpi-op-grid">
+    ${kpiCard('◉', 'COBRANZA %', '#a8ff3e',
+      P(cob0), P(cobN),
+      fmtPP(cobDlt), fmtPct(cobPct),
+      r0label + ' → ' + rNlabel + ' · ' + n + ' semanas',
+      cobDlt >= 0.05 ? '✓ Mejora sostenida' : cobDlt <= -0.05 ? '⚠ Deterioro' : '→ Estable'
+    )}
+    ${kpiCard('▣', 'A COBRAR $', '#38b6ff',
+      M(ac0), M(acN),
+      fmtM_d(acDlt), fmtPct(acPct),
+      'Cartera ' + tipoLabel,
+      acDlt > 0 ? '↑ Cartera creciendo' : acDlt < 0 ? '↓ Cartera reduciéndose' : null
+    )}
+    ${kpiCard('◈', 'COBRADO $', '#a8ff3e',
+      M(co0), M(coN),
+      fmtM_d(coDlt), fmtPct(coPct),
+      'Monto cobrado ' + tipoLabel,
+      coDlt > 0 && cobDlt >= 0 ? '✓ Más cobrado y mejor %' : coDlt > 0 && cobDlt < 0 ? '⚠ Más $ pero peor %' : null
+    )}
+    ${kpiCard('◇', 'VENTAS $', '#38b6ff',
+      M(v0), M(vN),
+      fmtM_d(vDlt), fmtPct(vPct),
+      'Capital colocado ' + tipoLabel,
+      vDlt > 0 && cobDlt < 0 ? '⚠ Ventas suben pero cobranza baja' : null
+    )}
+    ${kpiCard('⟳', 'ROTACIÓN', '#c084fc',
+      rot0.toFixed(2)+'x', rotN.toFixed(2)+'x',
+      fmtX(rotDlt), fmtPct(rotPct),
+      'Cobrado / Ventas ' + tipoLabel,
+      'Monetización de lo vendido'
+    )}
+    ${kpiCard('▽', 'CARTERA PENDIENTE', '#ff3d5a',
+      M(pend0), M(pendN),
+      fmtM_d(pendDlt), fmtPct(pendPct),
+      'A cobrar − Cobrado (brecha)',
+      pendDlt > 0 ? '⚠ Financiando más clientes' : '✓ Brecha se reduce',
+      false
+    )}
+    ${kpiCard('⊞', 'VOLATILIDAD', '#ffb038',
+      '±'+(vol1*100).toFixed(1)+'%', '±'+(vol2*100).toFixed(1)+'%',
+      fmtPP(volDlt), fmtPct(Math.abs(vol1)>0?volDlt/vol1:0),
+      'Desv. estándar cobranza (primer vs último tramo)',
+      volDlt < 0 ? '✓ Negocio más estable' : volDlt > 0 ? '⚠ Mayor dispersión' : '→ Sin cambios',
+      false
+    )}
+    ${kpiCard('△', 'COBRANZA VS PICO', esMaximo?'#a8ff3e':'#ffb038',
+      P(maxPct), P(cobN),
+      fmtPP(desdePico), '',
+      'Máximo histórico del período: ' + maxSem,
+      esMaximo ? '🏆 En el máximo histórico' : fmtPP(desdePico) + ' vs pico'
+    )}
+    ${kpiCard('↗', 'ACELERACIÓN', acel2 > acel1 ? '#a8ff3e' : '#ff3d5a',
+      (acel1*100).toFixed(2)+'pp/sem', (acel2*100).toFixed(2)+'pp/sem',
+      fmtPP(acelDlt), Math.abs(acel1)>0.001 ? fmtPct(acelPct) : '—',
+      'Velocidad de mejora: primer tramo vs último',
+      acel2 > 0.002 ? '🚀 Acelerando' : acel2 < -0.002 ? '↘ Desacelerando' : '→ Ritmo estable'
+    )}
+  </div>
+
+  <div class="divider" style="margin-top:24px;">Eficiencia de Cobranza — Descomposición de Δ Cobrado</div>
+  <div class="g3">
+    <div class="card-xs c-lime">
+      <div class="c-lbl">Impacto por mejora en %</div>
+      <div class="c-val ${impactoEfic>=0?'lime':'red'}">${M(impactoEfic)}</div>
+      <div class="c-sub">Δ rotación × ventas actuales</div>
+    </div>
+    <div class="card-xs c-sky">
+      <div class="c-lbl">Impacto por volumen</div>
+      <div class="c-val sky">${M(impactoVol)}</div>
+      <div class="c-sub">Δ ventas × rotación inicial</div>
+    </div>
+    <div class="card-xs c-amber">
+      <div class="c-lbl">Productividad / vendedor</div>
+      <div class="c-val amber">${M(prodN)}</div>
+      <div class="c-sub">${fmtM_d(prodDlt)} · ${fmtPct(prodPct)} vs inicio · ${nVend} vendedores</div>
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════
+   VENTAS
+══════════════════════════════════════════════ */
+let VENTAS_VEND = 'all'; // estado del filtro de vendedor en ventas
+
+function renderVentas(d,s) {
+  // ── Botones de vendedor ──
+  const btnsEl = document.getElementById('ventas-vend-btns');
+  if(btnsEl && !btnsEl.dataset.built) {
+    btnsEl.dataset.built = '1';
+    btnsEl.innerHTML = `<button class="fb-q active" data-vv="all" onclick="setVentasVend('all')">TODOS</button>` +
+      d.zonas.map(z=>`<button class="fb-q" data-vv="${z.name}" onclick="setVentasVend('${z.name}')" style="border-color:${z.color}33">${z.name}</button>`).join('');
+  }
+
+  // Fuente de datos según filtro vendedor
+  const zonaFiltrada = VENTAS_VEND === 'all' ? null : d.zonas.find(z=>z.name===VENTAS_VEND);
+  const globalRows   = zonaFiltrada ? zonaFiltrada.rows : d.global;
+  const zonaRows     = zonaFiltrada ? [zonaFiltrada] : d.zonas;
+  const label        = zonaFiltrada ? zonaFiltrada.name : 'Consolidado';
+
+  const totalVentas = sum(globalRows.map(x=>x.v));
+  const avgV        = globalRows.length ? totalVentas / globalRows.length : 0;
+  const maxSem      = globalRows.reduce((a,x)=>x.v>a.v?x:a, globalRows[0]||{v:0,sem:'—'});
+
+  const mejorZona = d.zonas.reduce((a,z)=>
+    sum(z.rows.map(x=>x.v)) > sum(a.rows.map(x=>x.v)) ? z : a, d.zonas[0]);
+
+  document.getElementById('ventas-sub').textContent =
+    `${label} · ${globalRows.length} semanas · Total: ${N(totalVentas)} · Prom/sem: ${N(avgV)}`;
+
+  document.getElementById('kpis-ventas').innerHTML = [
+    {l:'Total ventas período', v:M(totalVentas), cls:'lime', sub:`${globalRows.length} semanas`},
+    {l:'Semana récord',        v:M(maxSem.v),    cls:'sky',  sub:maxSem.sem||'—'},
+    {l:'Promedio semanal',     v:M(avgV),         cls:'amber',sub:'período filtrado'},
+    {l:'Mejor zona período',   v:mejorZona?.name||'—', cls:'violet', sub:'por ventas acumuladas'},
+  ].map(k=>`<div class="card-xs ${k.cls==='lime'?'c-lime':k.cls==='sky'?'c-sky':k.cls==='violet'?'c-violet':'c-amber'}"><div class="c-lbl">${k.l}</div><div class="c-val ${k.cls}">${k.v}</div><div class="c-sub">${k.sub}</div></div>`).join('');
+
+  // Gráfico ventas semanales
+  destroyChart('ventas_global');
+  charts['ventas_global'] = new Chart(document.getElementById('c_ventas_global').getContext('2d'),{
+    type:'bar',
+    data:{labels:globalRows.map(x=>x.sem), datasets:[{
+      label:'Ventas', data:globalRows.map(x=>+(x.v/1e6).toFixed(2)),
+      backgroundColor: zonaFiltrada ? zonaFiltrada.color+'66' : 'rgba(56,182,255,.4)',
+      borderColor: zonaFiltrada ? zonaFiltrada.color : '#38b6ff',
+      borderWidth:1, borderRadius:3
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'M'}}},
+      scales:{x:{ticks:{...CTICK,maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:CGRID},
+              y:{ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}}});
+
+  // Pie participación (solo si todos los vendedores)
+  const totalZ = sum(zonaRows.map(z=>sum(z.rows.map(x=>x.v))));
+  destroyChart('ventas_pie');
+  charts['ventas_pie'] = new Chart(document.getElementById('c_ventas_pie').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:zonaRows.map(z=>z.name),
+          datasets:[{data:zonaRows.map(z=>sum(z.rows.map(x=>x.v))),
+          backgroundColor:zonaRows.map(z=>z.color+'aa'),borderColor:'var(--ink)',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:CLEG,tooltip:{callbacks:{label:c=>`${c.label}: ${M(c.raw)} (${(c.raw/totalZ*100).toFixed(1)}%)`}}}}});
+
+  // Stacked: si hay filtro de vendedor muestra solo esa zona
+  const stackZonas = zonaFiltrada ? [zonaFiltrada] : d.zonas;
+  // Usar orden del global como referencia canónica
+  const stackGlobalSems = d.global.map(r => r.sem);
+  const stackZonaSems = new Set(stackZonas.flatMap(z=>z.rows.map(x=>x.sem)));
+  const allSems = [
+    ...stackGlobalSems.filter(s => stackZonaSems.has(s)),
+    ...[...stackZonaSems].filter(s => !stackGlobalSems.includes(s))
+  ];
+  destroyChart('ventas_stack');
+  charts['ventas_stack'] = new Chart(document.getElementById('c_ventas_stack').getContext('2d'),{
+    type:'bar',
+    data:{labels: allSems, datasets: stackZonas.map(z=>{
+      const semMap = {};
+      z.rows.forEach(r=>{ semMap[r.sem] = +(r.v/1e6).toFixed(2); });
+      return { label:z.name, data:allSems.map(s=>semMap[s]??0),
+        backgroundColor:z.color+'66', borderColor:z.color, borderWidth:1, borderRadius:2 };
+    })},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:CLEG},
+      scales:{x:{stacked:true,ticks:{...CTICK,maxRotation:45,autoSkip:true,maxTicksLimit:14},grid:CGRID},
+              y:{stacked:true,ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}}});
+}
+
+function setVentasVend(name) {
+  VENTAS_VEND = name;
+  document.querySelectorAll('#ventas-vend-btns .fb-q').forEach(b=>{
+    b.classList.toggle('active', b.dataset.vv === name);
+  });
+  const fd = getFilteredData();
+  renderVentas(fd, fd.stats);
+}
+
+/* ══════════════════════════════════════════════
+   COSTOS
+══════════════════════════════════════════════ */
+function renderCostos(d,s) {
+  const c = d.costos;
+  const ingresos = d.flujo.ventas_mes;
+  document.getElementById('kpis-costos').innerHTML = [
+    {l:'Costos totales/mes', v:M(c.total), cls:'red',   sub:'estructura completa'},
+    {l:'Semivariables',      v:M(c.semivariables), cls:'amber', sub:`${(c.semivariables/c.total*100).toFixed(0)}% del total`},
+    {l:'Variables',          v:M(c.variables),     cls:'sky',   sub:`${(c.variables/c.total*100).toFixed(0)}% del total`},
+    {l:'Fijos',              v:M(c.fijos),          cls:'violet',sub:`${(c.fijos/c.total*100).toFixed(0)}% del total`},
+  ].map(k=>`<div class="card-xs ${k.cls==='red'?'c-red':k.cls==='amber'?'c-amber':k.cls==='sky'?'c-sky':'c-violet'}"><div class="c-lbl">${k.l}</div><div class="c-val ${k.cls}">${k.v}</div><div class="c-sub">${k.sub}</div></div>`).join('');
+
+  destroyChart('costos_comp');
+  charts['costos_comp'] = new Chart(document.getElementById('c_costos_comp').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['Semivariables','Variables','Fijos'],datasets:[{data:[c.semivariables,c.variables,c.fijos],backgroundColor:['rgba(255,176,56,.6)','rgba(56,182,255,.6)','rgba(192,132,252,.6)'],borderColor:'var(--ink)',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:CLEG}}});
+
+  const maxC = Math.max(...c.items.map(x=>x.v));
+  document.getElementById('bar-costos-det').innerHTML = c.items.map(x=>{
+    const col = x.tipo==='Fijo'?'#c084fc':x.tipo==='Semivariable'?'#ffb038':'#38b6ff';
+    return `<div class="brow"><div class="bname">${x.n}</div><div class="btrack"><div class="bfill" style="width:${(x.v/maxC*100).toFixed(0)}%;background:${col}"></div></div><div class="bval">${M(x.v)}</div></div>`;
+  }).join('');
+
+  const tbody = document.getElementById('tbl-costos');
+  tbody.innerHTML = c.items.map(x=>{
+    const pill = x.tipo==='Fijo'?'p-violet':x.tipo==='Semivariable'?'p-amber':'p-sky';
+    return `<tr><td>${x.n}</td><td><span class="pill ${pill}">${x.tipo}</span></td><td class="mono">${N(x.v)}</td><td class="mono">${(x.v/c.total*100).toFixed(1)}%</td><td class="mono ${x.v/ingresos>.2?'red':'muted'}">${(x.v/ingresos*100).toFixed(1)}%</td></tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════
+   ACREEDORES
+══════════════════════════════════════════════ */
+function renderDeuda(d,s) {
+  const acrs = d.acreedores;
+  const totalDeuda = sum(acrs.map(x=>x.saldo));
+  const totalCuota = sum(acrs.map(x=>x.cuota));
+  const totalInv   = sum(acrs.map(x=>x.inv));
+  const tasaPromPond = acrs.reduce((a,x)=>a+x.tasa*(x.saldo/totalDeuda),0);
+
+  document.getElementById('kpis-deuda').innerHTML = [
+    {l:'Deuda total',         v:M(totalDeuda),           cls:'red',   sub:`${acrs.length} acreedores`},
+    {l:'Cuota mensual total', v:M(totalCuota),           cls:'amber', sub:'compromiso fijo'},
+    {l:'Tasa ponderada',      v:(tasaPromPond*100).toFixed(1)+'%', cls:'sky', sub:'costo promedio fondeo'},
+    {l:'Capital original',    v:M(totalInv),             cls:'violet',sub:'total invertido'},
+  ].map(k=>`<div class="card-xs ${k.cls==='red'?'c-red':k.cls==='amber'?'c-amber':k.cls==='sky'?'c-sky':'c-violet'}"><div class="c-lbl">${k.l}</div><div class="c-val ${k.cls}">${k.v}</div><div class="c-sub">${k.sub}</div></div>`).join('');
+
+  const acr_colors = ['#a8ff3e','#38b6ff','#ffb038','#ff3d5a','#c084fc','#ff6b4a'];
+  destroyChart('acr_pie');
+  charts['acr_pie'] = new Chart(document.getElementById('c_acr_pie').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:acrs.map(x=>x.nombre),datasets:[{data:acrs.map(x=>x.saldo),backgroundColor:acr_colors.map(c=>c+'aa'),borderColor:'var(--ink)',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:CLEG}}});
+
+  destroyChart('acr_bar');
+  charts['acr_bar'] = new Chart(document.getElementById('c_acr_bar').getContext('2d'),{
+    type:'bar',
+    data:{labels:acrs.map(x=>x.nombre),datasets:[
+      {label:'Invertido original',data:acrs.map(x=>+(x.inv/1e6).toFixed(2)),backgroundColor:'rgba(56,182,255,.3)',borderColor:'#38b6ff',borderWidth:1,borderRadius:3},
+      {label:'Saldo adeudado',    data:acrs.map(x=>+(x.saldo/1e6).toFixed(2)),backgroundColor:'rgba(255,61,90,.4)',borderColor:'#ff3d5a',borderWidth:1,borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:CLEG,tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'M'}}},
+    scales:{x:{ticks:{...CTICK,maxRotation:20},grid:CGRID},y:{ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}}});
+
+  // Acreedor cards
+  document.getElementById('acr-cards').innerHTML = acrs.map((a,i)=>{
+    const pct=(a.saldo/totalDeuda*100).toFixed(1);
+    const color=acr_colors[i]||'#888';
+    const tipo = a.inv>=6000000?'Banco':'Inversor';
+    return `<div class="card-xs" style="border-color:${color}33;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-weight:700;font-size:.88rem;">${a.nombre}</div>
+        <span class="pill ${tipo==='Banco'?'p-red':'p-amber'}">${tipo}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;font-size:.72rem;">
+        <div><div class="muted">Capital</div><div class="mono">${N(a.inv)}</div></div>
+        <div><div class="muted">Cuota/mes</div><div class="mono">${N(a.cuota)}</div></div>
+        <div><div class="muted">Plazo</div><div class="mono">${a.plazo} meses</div></div>
+        <div><div class="muted">Tasa</div><div class="mono">${(a.tasa*100).toFixed(0)}% anual</div></div>
+      </div>
+      <div style="font-family:var(--ff);font-weight:900;font-size:1.2rem;color:${color};">${N(a.saldo)}</div>
+      <div class="muted" style="font-size:.65rem;margin-bottom:6px;">saldo · ${pct}% del total</div>
+      <div style="background:var(--ink4);border-radius:3px;height:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${color};border-radius:3px;"></div></div>
+    </div>`;
+  }).join('');
+
+  // Cuotas timeline
+  destroyChart('acr_cuotas');
+  charts['acr_cuotas'] = new Chart(document.getElementById('c_acr_cuotas').getContext('2d'),{
+    type:'bar',
+    data:{labels:MESES,
+          datasets:acrs.map((a,i)=>({label:a.nombre,data:Array(12).fill(+(a.cuota/1e6).toFixed(3)),backgroundColor:acr_colors[i]+'44',borderColor:acr_colors[i],borderWidth:1,borderRadius:2}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:CLEG},
+    scales:{x:{stacked:true,ticks:CTICK,grid:CGRID},y:{stacked:true,ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}}});
+}
+
+/* ══════════════════════════════════════════════
+   FLUJO
+══════════════════════════════════════════════ */
+function renderFlujo(d,s) {
+  const f = d.flujo;
+  const ratio_da = f.activo_total>0?f.pasivo_total/f.activo_total:0;
+
+  document.getElementById('kpis-flujo').innerHTML = [
+    {l:'Total Activo',    v:M(f.activo_total), cls:'lime',  sub:`Activo neto dic 2025`},
+    {l:'Total Pasivo',    v:M(f.pasivo_total), cls:'red',   sub:`${(ratio_da*100).toFixed(1)}% del activo`},
+    {l:'Caja disponible', v:M(f.disponible),   cls:'sky',   sub:'caja + banco'},
+    {l:'Cash Flow',       v:M(f.cash_flow),    cls:'lime',  sub:'generación de fondos'},
+  ].map(k=>`<div class="card-xs ${k.cls==='lime'?'c-lime':k.cls==='red'?'c-red':'c-sky'}"><div class="c-lbl">${k.l}</div><div class="c-val ${k.cls}">${k.v}</div><div class="c-sub">${k.sub}</div></div>`).join('');
+
+  destroyChart('balance');
+  charts['balance'] = new Chart(document.getElementById('c_balance').getContext('2d'),{
+    type:'bar',
+    data:{labels:['ACTIVO','PASIVO'],datasets:[
+      {label:'Realizables',data:[+(f.realizables/1e6).toFixed(1),0],backgroundColor:'rgba(168,255,62,.5)',borderColor:'#a8ff3e',borderWidth:1,borderRadius:3},
+      {label:'Disponible', data:[+(f.disponible/1e6).toFixed(1),0],backgroundColor:'rgba(56,182,255,.4)',borderColor:'#38b6ff',borderWidth:1,borderRadius:3},
+      {label:'Deuda banc.', data:[0,+(f.deuda_bancaria/1e6).toFixed(1)],backgroundColor:'rgba(255,61,90,.5)',borderColor:'#ff3d5a',borderWidth:1,borderRadius:3},
+      {label:'Inversores',  data:[0,+(f.inversores/1e6).toFixed(1)],backgroundColor:'rgba(255,176,56,.4)',borderColor:'#ffb038',borderWidth:1,borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:CLEG},
+    scales:{x:{stacked:true,ticks:CTICK,grid:CGRID},y:{stacked:true,ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}}});
+
+  destroyChart('activo_pie');
+  charts['activo_pie'] = new Chart(document.getElementById('c_activo_pie').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:['A cobrar','Incobrables','Caja','Banco/FCI'],datasets:[{data:[f.realizables-500000,500000,f.caja,f.banco],backgroundColor:['rgba(168,255,62,.6)','rgba(255,61,90,.6)','rgba(56,182,255,.5)','rgba(192,132,252,.4)'],borderColor:'var(--ink)',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:CLEG}}});
+
+  document.getElementById('flujo-resultados').innerHTML = [
+    {l:'📥 Ventas',v:f.ventas_mes,pos:true},{l:'🍽 Consumos',v:-f.consumos,pos:false},
+    {l:'👥 Salarios',v:-f.salarios,pos:false},{l:'⚙️ Operativos',v:-f.operativos,pos:false},
+    {l:'💳 Pago pasivos',v:-f.pago_pasivos,pos:false},
+  ].map(x=>`<div class="srow"><div class="srow-l">${x.l}</div><div class="srow-r ${x.pos?'lime':'red'}">${N(x.v)}</div></div>`).join('')
+  + `<div class="srow highlight-g" style="margin-top:8px;"><div class="srow-l" style="font-weight:700">Cash Flow / Generación bruta</div><div class="srow-r lime" style="font-size:.9rem;">${N(f.cash_flow)}</div></div>`;
+}
+
+/* ══════════════════════════════════════════════
+   HISTORIAL
+══════════════════════════════════════════════ */
+function renderHistorial(d,s) {
+  document.getElementById('hist-sub').textContent = `${s.n} semanas · ${s.primer_sem} → ${s.ultimo_sem} · Total cobrado: ${N(s.total_cobrado)}`;
+
+  destroyChart('hist_full');
+  charts['hist_full'] = new Chart(document.getElementById('c_hist_full').getContext('2d'),{
+    type:'line',
+    data:{labels:d.global.map(x=>x.sem),datasets:[
+      {label:'% Cobranza',data:d.global.map(x=>+(x.pct*100).toFixed(1)),borderColor:'#a8ff3e',backgroundColor:'rgba(168,255,62,.06)',fill:true,tension:0,pointRadius:2,borderWidth:2,yAxisID:'y'},
+      {label:'Ventas ($M)',data:d.global.map(x=>+(x.v/1e6).toFixed(2)),borderColor:'#38b6ff',backgroundColor:'transparent',tension:0,pointRadius:1,borderWidth:1.5,borderDash:[3,2],yAxisID:'y2'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:CLEG},
+    scales:{
+      x:{ticks:{...CTICK,maxRotation:45,autoSkip:true,maxTicksLimit:16},grid:CGRID},
+      y:{min:40,max:115,position:'left',ticks:{...CTICK,callback:v=>v+'%'},grid:CGRID},
+      y2:{position:'right',ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:{display:false}},
+    }}});
+
+  const tbody = document.getElementById('tbl-hist');
+  tbody.innerHTML = '';
+  d.global.forEach((g,i)=>{
+    const prev = i>0?d.global[i-1].pct:g.pct;
+    const delta = g.pct-prev;
+    const dStr = i===0?'—':(delta>=0?`<span class="lime">↑${P(delta)}</span>`:`<span class="red">↓${P(Math.abs(delta))}</span>`);
+    // Match zona data by index (zonas have same length as global from same period)
+    const zp = d.zonas.map(z=>z.rows[i]?.pct||null);
+    tbody.innerHTML += `<tr>
+      <td class="mono muted">${i+1}</td>
+      <td class="mono">${g.sem}</td>
+      <td class="mono">${M(g.ac)}</td>
+      <td class="mono lime">${M(g.co)}</td>
+      <td class="mono red">${M(g.ac-g.co)}</td>
+      <td class="mono" style="color:${pctColor(g.pct)}">${P(g.pct)}</td>
+      <td>${dStr}</td>
+      <td class="mono">${M(g.v)}</td>
+      ${zp.map((p,zi)=>p!==null?`<td class="mono" style="color:${pctColor(p)};font-size:.7rem">${P(p)}</td>`:`<td class="muted">—</td>`).join('')}
+    </tr>`;
+  });
+}
+
+/* ══════════════════════════════════════════════
+   ALERTAS
+══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   HELPER: agrupar semanas DD/MM por mes, inferir año
+══════════════════════════════════════════════ */
+function agruparPorMes(filas) {
+  // filas: [{sem:'DD/MM', ...}] en orden cronológico
+  // Infiere año detectando cuando el mes "retrocede" (cruce de año nuevo)
+  const meses_es = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  let anio = new Date().getFullYear(); // empezar desde el año actual y restar
+  // Calcular año de inicio: contar cuántos cruces de año hay
+  const meses_nums = filas.map(x => parseInt(x.sem.split('/')[1]));
+  let cruces = 0;
+  for(let i = 1; i < meses_nums.length; i++) {
+    if(meses_nums[i] < meses_nums[i-1] && meses_nums[i-1] > 9) cruces++;
+  }
+  let anio_actual = anio - cruces;
+
+  const grupos = {};
+  const orden  = [];
+  let prev_mes = -1;
+  filas.forEach(x => {
+    const parts = x.sem.split('/');
+    const mes_n = parseInt(parts[1]);
+    if(prev_mes > 0 && mes_n < prev_mes && prev_mes > 9) anio_actual++;
+    prev_mes = mes_n;
+    const key = String(mes_n).padStart(2,'0') + '/' + anio_actual;
+    if(!grupos[key]) {
+      grupos[key] = { sems:[], label: meses_es[mes_n-1] + ' \'' + String(anio_actual).slice(2), mes_n, anio: anio_actual };
+      orden.push(key);
+    }
+    grupos[key].sems.push(x);
+  });
+  return orden.map(k => ({ key:k, ...grupos[k] }));
+}
+
+/* ══════════════════════════════════════════════
+   PROYECCIÓN DEL MES EN CURSO
+══════════════════════════════════════════════ */
+function renderProyeccion(d, s) {
+  const TASA = 0.40;
+  const g = d.global;
+  if(g.length < 2) return;
+
+  const mesesArr = agruparPorMes(g);
+  if(!mesesArr.length) return;
+
+  const mesActual  = mesesArr[mesesArr.length - 1];
+  const mesPrev    = mesesArr.length >= 2 ? mesesArr[mesesArr.length - 2] : null;
+  const semsActual = mesActual.sems;
+  const nSems      = semsActual.length;
+  const semsTotales = 4;
+
+  const ac_hasta = semsActual.reduce((a,x)=>a+x.ac,0);
+  const co_hasta = semsActual.reduce((a,x)=>a+x.co,0);
+  const v_hasta  = semsActual.reduce((a,x)=>a+x.v, 0);
+
+  let pct_est = ac_hasta > 0 ? co_hasta/ac_hasta : 0;
+  if(mesPrev) {
+    const ac_p = mesPrev.sems.reduce((a,x)=>a+x.ac,0);
+    const co_p = mesPrev.sems.reduce((a,x)=>a+x.co,0);
+    if(ac_p > 0) pct_est = co_p/ac_p;
+  }
+
+  const semsRest  = Math.max(0, semsTotales - nSems);
+  const acProm    = nSems > 0 ? ac_hasta/nSems : 0;
+  const vProm     = nSems > 0 ? v_hasta/nSems  : 0;
+
+  const ac_proy   = ac_hasta + acProm * semsRest;
+  const v_proy    = v_hasta  + vProm  * semsRest;
+  const co_proy   = co_hasta + acProm * semsRest * pct_est;
+  const pct_proy  = ac_proy > 0 ? co_proy/ac_proy : 0;
+  const ing_proy  = Math.round(v_proy * TASA * pct_proy);
+  const res_proy  = ing_proy - d.costos.total;
+
+  const avance    = Math.min(100, nSems/semsTotales*100).toFixed(0);
+  const statusCls = nSems >= 4 ? 'lime' : 'amber';
+  const statusTxt = nSems >= 4
+    ? 'Mes completo — 4 semanas registradas'
+    : `Semana ${nSems} de 4 — proyectando ${semsRest} semana${semsRest!==1?'s':''} restante${semsRest!==1?'s':''}`;
+
+  const escenarios = [
+    { l:'Pesimista', pct:Math.max(0,pct_proy-0.05), cls:'red'   },
+    { l:'Base',      pct:pct_proy,                   cls:'amber' },
+    { l:'Optimista', pct:Math.min(1,pct_proy+0.05),  cls:'lime'  },
+  ].map(e => ({ ...e, ing:Math.round(v_proy*TASA*e.pct), res:Math.round(v_proy*TASA*e.pct)-d.costos.total }));
+
+  document.getElementById('proyeccion-container').innerHTML = `
+    <div class="g-wide" style="margin-bottom:12px;">
+      <div class="card">
+        <div class="c-lbl" style="margin-bottom:8px;">📅 ${mesActual.label} — avance del mes</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div style="flex:1;background:var(--ink3);border-radius:4px;height:8px;overflow:hidden;">
+            <div style="width:${avance}%;height:100%;background:var(--${statusCls});border-radius:4px;"></div>
+          </div>
+          <span style="font-family:var(--fm);font-size:.7rem;color:var(--${statusCls});">${avance}%</span>
+        </div>
+        <div style="font-family:var(--fm);font-size:.65rem;color:var(--frost3);margin-bottom:12px;">${statusTxt}</div>
+        <div class="srow"><div class="srow-l">Cobranza registrada</div><div class="srow-r lime">${N(co_hasta)}</div></div>
+        <div class="srow"><div class="srow-l">Cobranza proyectada al cierre</div><div class="srow-r amber">${N(co_proy)}</div></div>
+        <div class="srow"><div class="srow-l">Ventas proyectadas al cierre</div><div class="srow-r sky">${N(v_proy)}</div></div>
+        <div class="srow"><div class="srow-l">% cobranza proyectado</div><div class="srow-r" style="color:${pctColor(pct_proy)}">${P(pct_proy)}</div></div>
+      </div>
+      <div class="card">
+        <div class="c-lbl" style="margin-bottom:10px;">🎯 Resultado proyectado al cierre</div>
+        <div style="text-align:center;padding:14px 0;">
+          <div style="font-family:var(--ff);font-size:2rem;font-weight:900;color:${res_proy>=0?'var(--lime)':'var(--red)'};">${N(res_proy)}</div>
+          <div style="font-family:var(--fm);font-size:.65rem;color:var(--frost3);margin-top:4px;">RESULTADO NETO PROYECTADO</div>
+        </div>
+        <div class="srow"><div class="srow-l">Ingresos financieros proyectados</div><div class="srow-r lime">${N(ing_proy)}</div></div>
+        <div class="srow"><div class="srow-l">Costos fijos del mes</div><div class="srow-r red">${N(d.costos.total)}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="c-lbl" style="margin-bottom:10px;">🔮 Escenarios al cierre</div>
+      <div class="g3">
+        ${escenarios.map(e=>`
+          <div class="card-xs ${e.cls==='lime'?'c-lime':e.cls==='red'?'c-red':'c-amber'}">
+            <div class="c-lbl">${e.l}</div>
+            <div style="font-family:var(--fm);font-size:.65rem;color:var(--frost3);margin-bottom:4px;">~${P(e.pct)} cobranza</div>
+            <div class="c-val ${e.cls}">${N(e.res)}</div>
+            <div class="c-sub">resultado neto</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderComparacionMensual(d, s) {
+  const TASA = 0.40;
+
+  // Respetar vendedor seleccionado en cobranza
+  const zonaFiltrada = COB_VEND === 'all' ? null : d.zonas.find(z => z.name === COB_VEND);
+  const filas        = zonaFiltrada ? zonaFiltrada.rows : d.global;
+  const label        = zonaFiltrada ? zonaFiltrada.name : 'Global';
+  const lineColor    = zonaFiltrada ? zonaFiltrada.color : '#a8ff3e';
+
+  if(!filas || !filas.length) return;
+
+  // Si las filas tienen campo fecha (ISO), usar eso para agrupar con precisión
+  // Si no, usar agruparPorMes (inferencia por cruce de año)
+  let mesesArr;
+  const tieneFecha = filas.every(x => x.fecha);
+  if(tieneFecha) {
+    // Agrupar usando fecha ISO — sin ambigüedad de año
+    const meses_es = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const grupos = {}, orden = [];
+    filas.forEach(x => {
+      const dt  = new Date(x.fecha);
+      const key = dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0');
+      if(!grupos[key]) {
+        grupos[key] = { sems:[], label: meses_es[dt.getUTCMonth()] + ' \'' + String(dt.getUTCFullYear()).slice(2) };
+        orden.push(key);
+      }
+      grupos[key].sems.push(x);
+    });
+    mesesArr = orden.map(k => ({ key:k, ...grupos[k] }));
+  } else {
+    mesesArr = agruparPorMes(filas);
+  }
+
+  if(!mesesArr.length) return;
+
+  // Calcular métricas por mes
+  const datos = mesesArr.map(m => {
+    const ac  = m.sems.reduce((a,x)=>a+x.ac,0);
+    const co  = m.sems.reduce((a,x)=>a+x.co,0);
+    const v   = m.sems.reduce((a,x)=>a+x.v, 0);
+    const pct = ac > 0 ? co/ac : 0;
+    const ing = Math.round(v * TASA * pct);
+    const res = ing - d.costos.total;
+    return { label:m.label, ac, co, v, pct, ing, res, n:m.sems.length };
+  });
+
+  const ultimos = datos.slice(-6);
+
+  document.getElementById('mensual-comparacion').innerHTML = `
+    <div style="font-family:var(--fm);font-size:.6rem;color:var(--frost3);margin-bottom:8px;letter-spacing:1px;">
+      VENDEDOR: <span style="color:${lineColor};font-weight:700">${label}</span>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr>
+          <th>Mes</th><th style="text-align:center">Sem.</th>
+          <th>Ventas</th><th>A Cobrar</th><th>Cobrado</th>
+          <th>% Cob.</th><th>Ing. Fin.</th>
+        </tr></thead>
+        <tbody>
+          ${ultimos.map((m,i)=>{
+            const esActual = i===ultimos.length-1;
+            const resCls = m.res>=0?'lime':'red';
+            return `<tr style="${esActual?'background:rgba(168,255,62,.05);':''}">
+              <td style="font-weight:${esActual?700:400};color:${esActual?'var(--frost)':'var(--frost2)'}">
+                ${m.label}${esActual?' <span style="font-size:.6rem;color:var(--amber)">●</span>':''}
+              </td>
+              <td style="color:var(--frost3);text-align:center">${m.n}</td>
+              <td>${M(m.v)}</td>
+              <td>${M(m.ac)}</td>
+              <td class="lime">${M(m.co)}</td>
+              <td style="color:${pctColor(m.pct)};font-weight:600">${P(m.pct)}</td>
+              <td class="lime">${M(m.ing)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  destroyChart('mensual_comp');
+  charts['mensual_comp'] = new Chart(
+    document.getElementById('c_mensual_comp').getContext('2d'), {
+    type:'bar',
+    data:{
+      labels: ultimos.map(m=>m.label),
+      datasets:[
+        {label:'Ventas',   data:ultimos.map(m=>+(m.v/1e6).toFixed(2)),  backgroundColor:'rgba(56,182,255,.25)',  borderColor:'#38b6ff',borderWidth:1,borderRadius:3},
+        {label:'A Cobrar', data:ultimos.map(m=>+(m.ac/1e6).toFixed(2)), backgroundColor:'rgba(192,132,252,.25)', borderColor:'#c084fc',borderWidth:1,borderRadius:3},
+        {label:'Cobrado',  data:ultimos.map(m=>+(m.co/1e6).toFixed(2)), backgroundColor:lineColor+'55',          borderColor:lineColor,borderWidth:1,borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:CLEG, tooltip:{callbacks:{label:c=>'$'+c.parsed.y+'M'}}},
+      scales:{x:{ticks:CTICK,grid:CGRID}, y:{ticks:{...CTICK,callback:v=>'$'+v+'M'},grid:CGRID}}
+    }
+  });
+}
+
+
+/* ══════════════════════════════════════════════
+   ALERTAS DE TENDENCIA POR VENDEDOR
+══════════════════════════════════════════════ */
+function detectarTendenciasVendedores(d) {
+  const alertas = [];
+  d.zonas.forEach(z => {
+    const rows = z.rows;
+    if(rows.length < 3) return;
+
+    // Últimas N semanas de cobranza
+    const ultimas = rows.slice(-6).map(x => x.pct);
+
+    // Detectar caída consecutiva (3+ semanas seguidas bajando)
+    let rachaAbajo = 0, rachaArriba = 0;
+    for(let i = 1; i < ultimas.length; i++) {
+      if(ultimas[i] < ultimas[i-1]) { rachaAbajo++; rachaArriba = 0; }
+      else if(ultimas[i] > ultimas[i-1]) { rachaArriba++; rachaAbajo = 0; }
+      else { rachaAbajo = 0; rachaArriba = 0; }
+    }
+
+    const ultimo_pct  = ultimas[ultimas.length - 1];
+    const pen_pct     = ultimas[ultimas.length - 2];
+    const delta       = ultimo_pct - pen_pct;
+
+    if(rachaAbajo >= 2) {
+      alertas.push({
+        tipo: rachaAbajo >= 3 ? 'red' : 'amber',
+        zona: z.name,
+        racha: rachaAbajo + 1,
+        pct_actual: ultimo_pct,
+        delta,
+        msg: `${rachaAbajo + 1} semanas consecutivas a la baja — ahora en ${P(ultimo_pct)}`
+      });
+    } else if(rachaArriba >= 2) {
+      alertas.push({
+        tipo: 'lime',
+        zona: z.name,
+        racha: rachaArriba + 1,
+        pct_actual: ultimo_pct,
+        delta,
+        msg: `${rachaArriba + 1} semanas consecutivas al alza — ahora en ${P(ultimo_pct)}`
+      });
+    }
+  });
+  return alertas;
+}
+
+function renderAlertas(d,s) {
+  const r = d.rent;
+  const alertas = [];
+
+  // Rentabilidad
+  if(r.resultado_neto < 0) {
+    alertas.push({tipo:'red', ico:'🚨', titulo:'PÉRDIDA NETA DEL MES', texto:`El resultado neto es ${N(r.resultado_neto)}. Los incobrables (${N(r.incobrables)}) son el principal factor. Necesitás ${N(Math.abs(r.resultado_neto))} más de cobranza para ser rentable.`});
+  } else {
+    alertas.push({tipo:'lime', ico:'✓', titulo:'RENTABILIDAD POSITIVA', texto:`El negocio generó ${N(r.resultado_neto)} de resultado neto. ROI del ${P(r.roi)} sobre el capital invertido.`});
+  }
+
+  // Break-even
+  if(r.cartera_activa < r.break_even) {
+    alertas.push({tipo:'red', ico:'⚠', titulo:'POR DEBAJO DEL BREAK-EVEN', texto:`La cartera activa (${N(r.cartera_activa)}) está por debajo del break-even (${N(r.break_even)}). Necesitás prestar ${N(r.break_even-r.cartera_activa)} más.`});
+  }
+
+  // Cobranza última semana
+  if(s.last_pct < 0.75) {
+    alertas.push({tipo:'red', ico:'📉', titulo:'COBRANZA CRÍTICA ÚLTIMA SEMANA', texto:`La última semana registró ${P(s.last_pct)} de cobranza, por debajo del umbral crítico del 75%. Revisá las zonas más afectadas.`});
+  } else if(s.last_pct >= 0.90) {
+    alertas.push({tipo:'lime', ico:'📈', titulo:'EXCELENTE COBRANZA ÚLTIMA SEMANA', texto:`La última semana alcanzó ${P(s.last_pct)}, superando la meta del 90%. Tendencia positiva sostenida.`});
+  }
+
+  // Tendencia
+  const last4avg = avg(d.global.slice(-4).map(x=>x.pct));
+  const prev4avg = avg(d.global.slice(-8,-4).map(x=>x.pct));
+  if(last4avg < prev4avg - 0.05) {
+    alertas.push({tipo:'amber', ico:'↓', titulo:'TENDENCIA A LA BAJA EN COBRANZA', texto:`Las últimas 4 semanas promedian ${P(last4avg)} vs ${P(prev4avg)} en las 4 anteriores. Caída de ${P(prev4avg-last4avg)}.`});
+  } else if(last4avg > prev4avg + 0.03) {
+    alertas.push({tipo:'lime', ico:'↑', titulo:'TENDENCIA AL ALZA EN COBRANZA', texto:`Las últimas 4 semanas promedian ${P(last4avg)} vs ${P(prev4avg)} en las 4 anteriores. Mejora de ${P(last4avg-prev4avg)}.`});
+  }
+
+  // Zona crítica
+  d.zonas.forEach(z=>{
+    if(!z.rows.length) return;
+    const ap = avg(z.rows.slice(-4).map(x=>x.pct));
+    if(ap < 0.65) alertas.push({tipo:'red', ico:'⚑', titulo:`ZONA ${z.name}: COBRANZA MUY BAJA`, texto:`Las últimas 4 semanas promedia ${P(ap)}. Revisión urgente de la cartera de ${z.name}.`});
+  });
+
+  // Deuda
+  const deuda_total = sum(d.acreedores.map(x=>x.saldo));
+  if(deuda_total > d.flujo.activo_total * 0.6) {
+    alertas.push({tipo:'amber', ico:'🏦', titulo:'ALTO APALANCAMIENTO', texto:`La deuda (${N(deuda_total)}) representa el ${P(deuda_total/d.flujo.activo_total)} del activo total. Por encima del límite recomendado del 60%.`});
+  }
+
+  // Incobrables
+  if(false) { // incobrables no aplica en este modelo
+    alertas.push({tipo:'amber', ico:'☠', titulo:'TASA DE INCOBRABILIDAD ELEVADA', texto:`Los incobrables estimados (${N(r.incobrables)}) representan el ${P(r.incobrables/r.colocacion)} de la colocación. El límite saludable es 8-10%.`});
+  }
+
+  // Spread
+  const tasaProm = avg(d.acreedores.map(x=>x.tasa));
+  const spread = r.roi - tasaProm;
+  if(spread < 0.05) {
+    alertas.push({tipo:'amber', ico:'📊', titulo:'SPREAD FINANCIERO AJUSTADO', texto:`El spread entre ROI (${P(r.roi)}) y costo de fondeo promedio (${P(tasaProm)}) es de solo ${P(spread)}. Margen estrecho ante cualquier variación.`});
+  }
+
+  // Tendencia por vendedor (3+ semanas consecutivas)
+  const tendencias = detectarTendenciasVendedores(d);
+  tendencias.forEach(t => {
+    if(t.tipo === 'red') {
+      alertas.push({tipo:'red', ico:'📉', titulo:`${t.zona}: CAÍDA SOSTENIDA — ${t.racha} SEMANAS`, texto:`${t.msg}. Delta última semana: ${t.delta>=0?'+':''}${P(t.delta)}. Atención inmediata recomendada.`});
+    } else if(t.tipo === 'amber') {
+      alertas.push({tipo:'amber', ico:'⚠', titulo:`${t.zona}: TENDENCIA A LA BAJA`, texto:`${t.msg}. Monitorear la próxima semana.`});
+    } else {
+      alertas.push({tipo:'lime', ico:'📈', titulo:`${t.zona}: RECUPERACIÓN SOSTENIDA`, texto:`${t.msg}. Tendencia positiva confirmada.`});
+    }
+  });
+
+  const container = document.getElementById('alertas-container');
+  container.innerHTML = alertas.map(a=>`
+    <div class="alert al-${a.tipo}">
+      <div class="al-ico">${a.ico}</div>
+      <div><div class="al-title">${a.titulo}</div><div class="al-text">${a.texto}</div></div>
+    </div>`).join('');
+
+  if(!alertas.length) container.innerHTML = '<div class="alert al-lime"><div class="al-ico">✓</div><div><div class="al-title">Sin alertas activas</div><div class="al-text">Todos los indicadores están dentro de parámetros normales.</div></div></div>';
+}
+</script>
+</body>
+</html>

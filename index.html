@@ -1338,18 +1338,7 @@ document.querySelectorAll('.sb-item').forEach(el => {
    LOGIN & GOOGLE SHEETS AUTO-LOAD
 ══════════════════════════════════════════════ */
 const ACCESS_KEY = 'GVGROUP9.48';
-const SHEET_ID = '1IPRkXGuptQiDSTUwsgwuY2-pkRrkvN4Q';
-
-// Nombres exactos de las pestañas en el Google Sheet
-const SHEET_NAMES = [
-  'ANALISIS GLOBAL',
-  'Z1','Z2','Z3','Z4','Z5',
-  'ACREEDORES','COSTOS','RENTABILIDAD'
-];
-
-function sheetUrl(sheetName) {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
-}
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5J4RpJ3pDsi6idcH1MG_jo34i96SsG6C8B6I9bSBf7s5da7ijLnlS6udvz8mM99K4/exec';
 
 function doLogin() {
   const val = document.getElementById('loginInput').value.trim();
@@ -1370,24 +1359,20 @@ function loadFromSheets() {
   const loadEl = document.getElementById('loginLoading');
   const errEl  = document.getElementById('loginError');
 
-  // Fetch all sheets in parallel
-  const fetches = SHEET_NAMES.map(name =>
-    fetch(sheetUrl(name))
-      .then(r => r.ok ? r.text() : '')
-      .catch(() => '')
-  );
-
-  Promise.all(fetches).then(csvs => {
-    try {
-      // Build a workbook with one sheet per tab
+  fetch(APPS_SCRIPT_URL)
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(json => {
+      // Build workbook from Apps Script JSON response
       const wb = { SheetNames: [], Sheets: {} };
-      SHEET_NAMES.forEach((name, i) => {
-        if (csvs[i]) {
-          const ws = XLSX.read(csvs[i], { type: 'string', raw: true }).Sheets['Sheet1']
-                  || XLSX.utils.aoa_to_sheet(csvs[i].split('\n').map(r => r.split(',')));
-          wb.SheetNames.push(name);
-          wb.Sheets[name] = ws;
-        }
+      Object.keys(json).forEach(sheetName => {
+        const rows = json[sheetName];
+        if (!rows || rows.length === 0) return;
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        wb.SheetNames.push(sheetName);
+        wb.Sheets[sheetName] = ws;
       });
 
       if (wb.SheetNames.length === 0) throw new Error('Sin datos');
@@ -1405,19 +1390,13 @@ function loadFromSheets() {
       document.querySelectorAll('.sb-item').forEach(x => x.classList.remove('active'));
       document.querySelector('[data-sec="rentabilidad"]').classList.add('active');
       renderAll();
-
-    } catch(err) {
-      console.warn('Parse error:', err);
+    })
+    .catch(err => {
+      console.warn('Sheets load failed:', err);
       loadEl.textContent = '';
-      errEl.textContent = 'ERROR AL LEER DATOS — SUBÍ EL EXCEL MANUALMENTE';
+      errEl.textContent = 'NO SE PUDO CONECTAR — SUBÍ EL EXCEL MANUALMENTE';
       document.getElementById('loginScreen').style.display = 'none';
-    }
-  }).catch(err => {
-    console.warn('Fetch error:', err);
-    loadEl.textContent = '';
-    errEl.textContent = 'NO SE PUDO CONECTAR — SUBÍ EL EXCEL MANUALMENTE';
-    document.getElementById('loginScreen').style.display = 'none';
-  });
+    });
 }
 
 /* ══════════════════════════════════════════════

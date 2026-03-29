@@ -318,6 +318,97 @@ input, select { font-family: var(--ff); }
 }
 
 /* ═══════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════ */
+#loginScreen {
+  position: fixed; inset: 0;
+  background: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999;
+  flex-direction: column;
+  gap: 0;
+}
+.login-box {
+  background: var(--ink2);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  padding: 48px 56px;
+  width: 100%; max-width: 400px;
+  text-align: center;
+}
+.login-logo {
+  font-family: var(--ff);
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  color: var(--lime);
+  margin-bottom: 4px;
+}
+.login-sub {
+  font-family: var(--fm);
+  font-size: .65rem;
+  letter-spacing: 2px;
+  color: var(--frost3);
+  text-transform: uppercase;
+  margin-bottom: 36px;
+}
+.login-label {
+  font-family: var(--fm);
+  font-size: .65rem;
+  letter-spacing: 2px;
+  color: var(--frost3);
+  text-align: left;
+  display: block;
+  margin-bottom: 8px;
+}
+.login-input {
+  width: 100%;
+  background: var(--ink3);
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--frost);
+  font-family: var(--fm);
+  font-size: .9rem;
+  letter-spacing: 3px;
+  outline: none;
+  transition: border-color .2s;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.login-input:focus { border-color: var(--lime); }
+.login-btn {
+  width: 100%;
+  background: var(--lime);
+  color: var(--ink);
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  font-weight: 700;
+  font-size: .85rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.login-btn:hover { opacity: .85; }
+.login-error {
+  margin-top: 14px;
+  font-family: var(--fm);
+  font-size: .72rem;
+  color: var(--red);
+  min-height: 18px;
+  letter-spacing: 1px;
+}
+.login-loading {
+  margin-top: 14px;
+  font-family: var(--fm);
+  font-size: .72rem;
+  color: var(--frost3);
+  min-height: 18px;
+  letter-spacing: 1px;
+}
+
+/* ═══════════════════════════════════════
    SECTIONS
 ═══════════════════════════════════════ */
 .section { display: none; }
@@ -714,6 +805,20 @@ tbody td { padding: 9px 12px; }
   <div class="loading-text">PROCESANDO EXCEL...</div>
 </div>
 
+<!-- ════ LOGIN SCREEN ════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">GV GROUP</div>
+    <div class="login-sub">Centro de Análisis Financiero</div>
+    <label class="login-label">CLAVE DE ACCESO</label>
+    <input type="password" class="login-input" id="loginInput" placeholder="••••••••••••"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">INGRESAR</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-loading" id="loginLoading"></div>
+  </div>
+</div>
+
 <div class="shell">
 
 <!-- ════════════════ SIDEBAR ════════════════ -->
@@ -805,14 +910,13 @@ tbody td { padding: 9px 12px; }
            ondragleave="this.classList.remove('drag')"
            ondrop="handleDrop(event)">
         <div class="upload-icon">📊</div>
-        <div class="upload-title">CARGÁ TU EXCEL</div>
+        <div class="upload-title">CARGANDO DATOS</div>
         <div class="upload-desc">
-          Arrastrá el archivo Excel de GV Group aquí o hacé click.<br>
-          El sistema lee automáticamente todas las hojas:<br>
-          <strong>ANALISIS GLOBAL, Z1–Z5, ACREEDORES, COSTOS, RENTABILIDAD</strong>
+          Conectando con Google Sheets…<br>
+          Si la carga automática falla, podés subir el Excel manualmente.
         </div>
-        <button class="upload-cta">SELECCIONAR ARCHIVO</button>
-        <div class="upload-note">Compatible con .xlsx · Cada semana subís el mismo archivo actualizado</div>
+        <button class="upload-cta" onclick="event.stopPropagation();document.getElementById('fileInput').click()">SUBIR EXCEL MANUAL</button>
+        <div class="upload-note">Compatible con .xlsx · Carga automática desde Google Sheets activa</div>
       </div>
     </div>
 
@@ -1229,6 +1333,92 @@ document.querySelectorAll('.sb-item').forEach(el => {
     document.getElementById('topTitle').textContent = TITLES[sec] || sec;
   });
 });
+
+/* ══════════════════════════════════════════════
+   LOGIN & GOOGLE SHEETS AUTO-LOAD
+══════════════════════════════════════════════ */
+const ACCESS_KEY = 'GVGROUP9.48';
+const SHEET_ID = '1IPRkXGuptQiDSTUwsgwuY2-pkRrkvN4Q';
+
+// Nombres exactos de las pestañas en el Google Sheet
+const SHEET_NAMES = [
+  'ANALISIS GLOBAL',
+  'Z1','Z2','Z3','Z4','Z5',
+  'ACREEDORES','COSTOS','RENTABILIDAD'
+];
+
+function sheetUrl(sheetName) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+}
+
+function doLogin() {
+  const val = document.getElementById('loginInput').value.trim();
+  const errEl = document.getElementById('loginError');
+  const loadEl = document.getElementById('loginLoading');
+  if (val !== ACCESS_KEY) {
+    errEl.textContent = 'CLAVE INCORRECTA';
+    document.getElementById('loginInput').value = '';
+    return;
+  }
+  errEl.textContent = '';
+  loadEl.textContent = 'CONECTANDO CON GOOGLE SHEETS…';
+  document.getElementById('loginScreen').style.pointerEvents = 'none';
+  loadFromSheets();
+}
+
+function loadFromSheets() {
+  const loadEl = document.getElementById('loginLoading');
+  const errEl  = document.getElementById('loginError');
+
+  // Fetch all sheets in parallel
+  const fetches = SHEET_NAMES.map(name =>
+    fetch(sheetUrl(name))
+      .then(r => r.ok ? r.text() : '')
+      .catch(() => '')
+  );
+
+  Promise.all(fetches).then(csvs => {
+    try {
+      // Build a workbook with one sheet per tab
+      const wb = { SheetNames: [], Sheets: {} };
+      SHEET_NAMES.forEach((name, i) => {
+        if (csvs[i]) {
+          const ws = XLSX.read(csvs[i], { type: 'string', raw: true }).Sheets['Sheet1']
+                  || XLSX.utils.aoa_to_sheet(csvs[i].split('\n').map(r => r.split(',')));
+          wb.SheetNames.push(name);
+          wb.Sheets[name] = ws;
+        }
+      });
+
+      if (wb.SheetNames.length === 0) throw new Error('Sin datos');
+
+      DATA = parseWorkbook(wb);
+
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('uploadScreen').style.display = 'none';
+
+      document.querySelectorAll('.section').forEach(s => {
+        s.classList.remove('active'); s.style.display = 'none';
+      });
+      const sec = document.getElementById('sec-rentabilidad');
+      sec.classList.add('active'); sec.style.display = 'block';
+      document.querySelectorAll('.sb-item').forEach(x => x.classList.remove('active'));
+      document.querySelector('[data-sec="rentabilidad"]').classList.add('active');
+      renderAll();
+
+    } catch(err) {
+      console.warn('Parse error:', err);
+      loadEl.textContent = '';
+      errEl.textContent = 'ERROR AL LEER DATOS — SUBÍ EL EXCEL MANUALMENTE';
+      document.getElementById('loginScreen').style.display = 'none';
+    }
+  }).catch(err => {
+    console.warn('Fetch error:', err);
+    loadEl.textContent = '';
+    errEl.textContent = 'NO SE PUDO CONECTAR — SUBÍ EL EXCEL MANUALMENTE';
+    document.getElementById('loginScreen').style.display = 'none';
+  });
+}
 
 /* ══════════════════════════════════════════════
    FILE HANDLING
